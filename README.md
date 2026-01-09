@@ -11,6 +11,20 @@ A state-management agnostic settings framework for Flutter apps with multi-langu
 - **easy_localization Support**: Built-in integration with easy_localization package
 - **Minimal Boilerplate**: Register once, use everywhere
 
+## Installation
+
+Add to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  flutter_settings_framework:
+    git:
+      url: https://github.com/Zyzto/edadat.git
+      ref: main
+    # Or from pub.dev when published:
+    # flutter_settings_framework: ^1.0.0
+```
+
 ## Quick Start
 
 ### 1. Define Your Settings
