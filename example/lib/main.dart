@@ -19,8 +19,9 @@ void main() async {
       overrides: [
         settingsControllerProvider.overrideWithValue(settings.controller),
         settingsSearchIndexProvider.overrideWithValue(settings.searchIndex),
+        settingsProvidersProvider.overrideWithValue(settings),
       ],
-      child: MyApp(settings: settings),
+      child: const MyApp(),
     ),
   );
 }
@@ -125,14 +126,11 @@ SettingsRegistry createExampleRegistry() {
 // =============================================================================
 
 class MyApp extends ConsumerWidget {
-  final SettingsProviders settings;
-
-  const MyApp({super.key, required this.settings});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch theme mode setting
-    final themeModeStr = ref.watch(settings.provider(themeModeSetting));
+    final themeModeStr = ref.watchSetting(themeModeSetting);
     final themeMode = _parseThemeMode(themeModeStr);
 
     return MaterialApp(
@@ -142,7 +140,7 @@ class MyApp extends ConsumerWidget {
         useMaterial3: true,
       ),
       themeMode: themeMode,
-      home: SettingsExamplePage(settings: settings),
+      home: const SettingsExamplePage(),
     );
   }
 
@@ -164,9 +162,7 @@ class MyApp extends ConsumerWidget {
 // =============================================================================
 
 class SettingsExamplePage extends ConsumerStatefulWidget {
-  final SettingsProviders settings;
-
-  const SettingsExamplePage({super.key, required this.settings});
+  const SettingsExamplePage({super.key});
 
   @override
   ConsumerState<SettingsExamplePage> createState() =>
@@ -177,7 +173,6 @@ class _SettingsExamplePageState extends ConsumerState<SettingsExamplePage> {
   final TextEditingController _searchController = TextEditingController();
   List<SearchResult> _searchResults = [];
   bool _isSearching = false;
-
   @override
   void dispose() {
     _searchController.dispose();
@@ -195,16 +190,36 @@ class _SettingsExamplePageState extends ConsumerState<SettingsExamplePage> {
 
     setState(() {
       _isSearching = true;
-      _searchResults = widget.settings.searchIndex.search(query);
+      _searchResults =
+          ref.read(settingsProvidersProvider).searchIndex.search(query);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final settings = ref.watch(settingsProvidersProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings Framework Example'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.dashboard_customize),
+            tooltip: 'Open RegistrySettingsPage',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => RegistrySettingsPage(
+                    registry: createExampleRegistry(),
+                    settings: settings,
+                    title: 'Settings (RegistrySettingsPage)',
+                    searchHint: 'Search settings...',
+                    sectionTitleBuilder: (key) => key,
+                  ),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search),
             onPressed: () {
@@ -255,7 +270,8 @@ class _SettingsExamplePageState extends ConsumerState<SettingsExamplePage> {
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
             title: Text(result.setting.titleKey),
-            subtitle: Text('Match: "${result.matchedTerm}" (score: ${result.score.toStringAsFixed(2)})'),
+            subtitle: Text(
+                'Match: "${result.matchedTerm}" (score: ${result.score.toStringAsFixed(2)})'),
             trailing: _buildSettingValue(result.setting),
           ),
         );
@@ -285,11 +301,14 @@ class _SettingsExamplePageState extends ConsumerState<SettingsExamplePage> {
         // Current Values Display
         _buildSectionHeader('Current Values'),
         const SizedBox(height: 8),
-        _buildValueCard('Theme Mode', ref.watch(widget.settings.provider(themeModeSetting))),
-        _buildValueCard('Notifications', ref.watch(widget.settings.provider(notificationsSetting)).toString()),
-        _buildValueCard('Theme Color', '#${ref.watch(widget.settings.provider(themeColorSetting)).toRadixString(16).toUpperCase()}'),
-        _buildValueCard('Card Elevation', ref.watch(widget.settings.provider(cardElevationSetting)).toString()),
-        _buildValueCard('Font Size', ref.watch(widget.settings.provider(fontSizeScaleSetting))),
+        _buildValueCard('Theme Mode', ref.watchSetting(themeModeSetting)),
+        _buildValueCard(
+            'Notifications', ref.watchSetting(notificationsSetting).toString()),
+        _buildValueCard('Theme Color',
+            '#${ref.watchSetting(themeColorSetting).toRadixString(16).toUpperCase()}'),
+        _buildValueCard('Card Elevation',
+            ref.watchSetting(cardElevationSetting).toString()),
+        _buildValueCard('Font Size', ref.watchSetting(fontSizeScaleSetting)),
       ],
     );
   }
@@ -315,20 +334,20 @@ class _SettingsExamplePageState extends ConsumerState<SettingsExamplePage> {
       return SwitchSettingsTile.fromSetting(
         setting: setting,
         title: setting.titleKey,
-        value: ref.watch(widget.settings.provider(setting)),
+        value: ref.watch(ref.settings.provider(setting)),
         onChanged: (value) {
-          ref.read(widget.settings.provider(setting).notifier).set(value);
+          ref.read(ref.settings.provider(setting).notifier).set(value);
         },
       );
     } else if (setting is EnumSetting) {
       return SelectSettingsTile.fromEnumSetting(
         setting: setting,
         title: setting.titleKey,
-        value: ref.watch(widget.settings.provider(setting)),
+        value: ref.watch(ref.settings.provider(setting)),
         labelBuilder: (opt) => opt.replaceAll('_', ' ').toUpperCase(),
         onChanged: (value) {
           if (value != null) {
-            ref.read(widget.settings.provider(setting).notifier).set(value);
+            ref.read(ref.settings.provider(setting).notifier).set(value);
           }
         },
       );
@@ -336,18 +355,18 @@ class _SettingsExamplePageState extends ConsumerState<SettingsExamplePage> {
       return ColorSettingsTile.fromSetting(
         setting: setting,
         title: setting.titleKey,
-        value: ref.watch(widget.settings.provider(setting)),
+        value: ref.watch(ref.settings.provider(setting)),
         onChanged: (value) {
-          ref.read(widget.settings.provider(setting).notifier).set(value);
+          ref.read(ref.settings.provider(setting).notifier).set(value);
         },
       );
     } else if (setting is DoubleSetting) {
       return SliderSettingsTile.fromDoubleSetting(
         setting: setting,
         title: setting.titleKey,
-        value: ref.watch(widget.settings.provider(setting)),
+        value: ref.watch(ref.settings.provider(setting)),
         onChanged: (value) {
-          ref.read(widget.settings.provider(setting).notifier).set(value);
+          ref.read(ref.settings.provider(setting).notifier).set(value);
         },
       );
     } else {
@@ -360,13 +379,13 @@ class _SettingsExamplePageState extends ConsumerState<SettingsExamplePage> {
 
   Widget _buildSettingValue(SettingDefinition setting) {
     if (setting is BoolSetting) {
-      final value = ref.watch(widget.settings.provider(setting));
+      final value = ref.watch(ref.settings.provider(setting));
       return Text(value.toString());
     } else if (setting is EnumSetting) {
-      final value = ref.watch(widget.settings.provider(setting));
+      final value = ref.watch(ref.settings.provider(setting));
       return Text(value);
     } else if (setting is ColorSetting) {
-      final color = ref.watch(widget.settings.provider(setting));
+      final color = ref.watch(ref.settings.provider(setting));
       return Container(
         width: 24,
         height: 24,
@@ -377,7 +396,7 @@ class _SettingsExamplePageState extends ConsumerState<SettingsExamplePage> {
         ),
       );
     } else if (setting is DoubleSetting) {
-      final value = ref.watch(widget.settings.provider(setting));
+      final value = ref.watch(ref.settings.provider(setting));
       return Text(value.toStringAsFixed(1));
     }
     return const SizedBox.shrink();

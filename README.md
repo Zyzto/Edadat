@@ -74,11 +74,12 @@ SettingsRegistry createMyRegistry() {
 
 ### 2. Initialize in main.dart
 
+Override all three providers so that `ref.settings`, `ref.watchSetting(setting)`, and `settingsSearchResultsProvider(query)` work:
+
 ```dart
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize settings
   final settings = await initializeSettings(
     registry: createMyRegistry(),
     storage: SharedPreferencesStorage(),
@@ -87,9 +88,9 @@ Future<void> main() async {
   runApp(
     ProviderScope(
       overrides: [
-        // Override the providers with your initialized instances
         settingsControllerProvider.overrideWithValue(settings.controller),
         settingsSearchIndexProvider.overrideWithValue(settings.searchIndex),
+        settingsProvidersProvider.overrideWithValue(settings),
       ],
       child: MyApp(),
     ),
@@ -99,24 +100,25 @@ Future<void> main() async {
 
 ### 3. Use in Widgets
 
+With the overrides above you can use the ref extension:
+
 ```dart
-class SettingsPage extends ConsumerWidget {
+class MyWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch a setting value
-    final theme = ref.watch(settings.provider(themeModeSetting));
+    // ref.settings gives you the SettingsProviders container
+    final theme = ref.watchSetting(themeModeSetting);
+    // Or when you already have a SettingsProviders instance:
+    final theme2 = ref.watchSettingWith(settings, themeModeSetting);
     
     return Scaffold(
       body: ListView(
         children: [
-          // Use pre-built tiles
           SwitchSettingsTile.fromSetting(
             setting: notificationsSetting,
             title: 'notifications'.tr(),
-            value: ref.watch(settings.provider(notificationsSetting)),
-            onChanged: (value) {
-              ref.read(settings.provider(notificationsSetting).notifier).set(value);
-            },
+            value: ref.watchSetting(notificationsSetting),
+            onChanged: (value) => ref.updateSetting(notificationsSetting, value),
           ),
         ],
       ),
@@ -124,6 +126,27 @@ class SettingsPage extends ConsumerWidget {
   }
 }
 ```
+
+### 4. Convention-based settings page
+
+Use `RegistrySettingsPage` to build a full settings UI from your registry (sections, tiles by type, search, split layout on landscape). Pass `sectionTitleBuilder` (e.g. `(key) => key.tr()`) and optionally `sectionContentBuilder` for custom sections (Tags, About, etc.):
+
+```dart
+RegistrySettingsPage(
+  registry: myRegistry,
+  settings: ref.settings,
+  title: 'settings'.tr(),
+  searchHint: 'search_settings'.tr(),
+  sectionTitleBuilder: (key) => key.tr(),
+  enumLabelBuilder: (key) => key.tr(),
+  sectionContentBuilder: (sectionKey, defaultChildren) {
+    if (sectionKey == 'about') return [AboutSectionContent()];
+    return defaultChildren;
+  },
+)
+```
+
+Search results use the built-in provider: `ref.watch(settingsSearchResultsProvider(query))`.
 
 ## Setting Types
 
@@ -176,6 +199,14 @@ final results2 = searchIndex.search('arabic'); // Also finds it
 - `SettingsSubsectionHeader` - Section dividers
 - `SettingsSearchBar` - Expandable search
 - `SplitScreenLayout` - List/detail for tablets
+- `RegistrySettingsPage` - Full settings page from registry (sections, default tiles by type, search, landscape split). Use `sectionContentBuilder` for custom sections (e.g. About, Data).
+- `CardSettingsSection` - Card-style collapsible section with optional landscape selection
+
+### Helpers
+- `ref.settings` - Access [SettingsProviders] when [settingsProvidersProvider] is overridden
+- `ref.watchSetting(setting)` / `ref.readSetting(setting)` / `ref.updateSetting(setting, value)` / `ref.resetSetting(setting)` - Convenience methods using `ref.settings`
+- `settingsSearchResultsProvider(query)` - Built-in family provider for search results
+- `isSettingEnabled(settings, setting, ref)` - Whether a setting is enabled (respects `dependsOn` / `enabledWhen`)
 
 ### Dialogs
 - `SettingsDialog.show()` - Generic dialog
