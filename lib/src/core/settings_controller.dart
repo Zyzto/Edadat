@@ -400,8 +400,48 @@ class SettingsController {
     // Emit to setting-specific stream
     _streamControllers[setting.key]?.add(newValue);
 
-    // For global stream, we need to create an untyped event
-    // This is a limitation of Dart's type system
+    // Emit to global change stream using dynamic dispatch to satisfy generics.
+    _emitGlobalChangeEvent(setting, oldValue, newValue);
+  }
+
+  /// Helper to create a typed [SettingChangeEvent] from untyped values.
+  void _emitGlobalChangeEvent(
+    SettingDefinition setting,
+    Object? oldValue,
+    Object? newValue,
+  ) {
+    if (setting is SettingDefinition<String>) {
+      _globalChangeController.add(SettingChangeEvent<String>(
+        setting: setting,
+        oldValue: oldValue as String? ?? setting.defaultValue,
+        newValue: newValue as String? ?? setting.defaultValue,
+      ));
+    } else if (setting is SettingDefinition<int>) {
+      _globalChangeController.add(SettingChangeEvent<int>(
+        setting: setting,
+        oldValue: oldValue as int? ?? setting.defaultValue,
+        newValue: newValue as int? ?? setting.defaultValue,
+      ));
+    } else if (setting is SettingDefinition<double>) {
+      _globalChangeController.add(SettingChangeEvent<double>(
+        setting: setting,
+        oldValue: oldValue as double? ?? setting.defaultValue,
+        newValue: newValue as double? ?? setting.defaultValue,
+      ));
+    } else if (setting is SettingDefinition<bool>) {
+      _globalChangeController.add(SettingChangeEvent<bool>(
+        setting: setting,
+        oldValue: oldValue as bool? ?? setting.defaultValue,
+        newValue: newValue as bool? ?? setting.defaultValue,
+      ));
+    } else if (setting is SettingDefinition<List<String>>) {
+      _globalChangeController.add(SettingChangeEvent<List<String>>(
+        setting: setting,
+        oldValue: oldValue as List<String>? ?? setting.defaultValue,
+        newValue: newValue as List<String>? ?? setting.defaultValue,
+      ));
+    }
+    // Other types will emit to the setting-specific stream only.
   }
 
   /// Get a stream of values for a setting.
@@ -434,8 +474,8 @@ class SettingsController {
 
   /// Add a listener for a specific setting.
   ///
-  /// Returns a function to remove the listener.
-  VoidCallback addListener<T>(
+  /// Returns a function that removes the listener when called.
+  void Function() addListener<T>(
     SettingDefinition<T> setting,
     SettingChangeCallback<T> callback,
   ) {
@@ -527,5 +567,3 @@ class _UndoEntry {
   });
 }
 
-/// Typedef for void callback (for listener removal).
-typedef VoidCallback = void Function();

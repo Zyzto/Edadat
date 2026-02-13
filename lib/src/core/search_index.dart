@@ -12,7 +12,8 @@ import 'settings_registry.dart';
 /// Localization provider interface.
 ///
 /// Implement this to provide translations for search indexing.
-/// The framework provides an [EasyLocalizationAdapter] for easy_localization.
+/// The framework provides [EasyLocalizationAdapterImpl] for easy_localization
+/// and [PreIndexedLocalizationProvider] for pre-indexed translations.
 abstract class LocalizationProvider {
   /// Get all supported locales.
   List<Locale> get supportedLocales;
@@ -321,21 +322,13 @@ class _ScoreAccumulator {
   }
 }
 
-/// Adapter for easy_localization package.
+/// **Deprecated:** Use [EasyLocalizationAdapterImpl] from
+/// `package:flutter_settings_framework/src/localization/easy_localization_adapter.dart`
+/// instead. This stub does not actually use easy_localization — its [translate]
+/// method simply returns the key unchanged.
 ///
-/// Use this if your app uses easy_localization for i18n.
-///
-/// Example:
-/// ```dart
-/// // Ensure easy_localization is initialized first
-/// await EasyLocalization.ensureInitialized();
-///
-/// final adapter = EasyLocalizationAdapter(supportedLocales);
-/// final index = SearchIndex(
-///   registry: registry,
-///   localizationProvider: adapter,
-/// );
-/// ```
+/// Kept for backward compatibility.
+@Deprecated('Use EasyLocalizationAdapterImpl for real easy_localization integration')
 class EasyLocalizationAdapter implements LocalizationProvider {
   final List<Locale> _supportedLocales;
 
@@ -347,8 +340,6 @@ class EasyLocalizationAdapter implements LocalizationProvider {
 
   @override
   String translate(String key, {required Locale locale}) {
-    // Default implementation returns the key
-    // Apps should override this or use the actual easy_localization call
     return key;
   }
 
@@ -356,9 +347,12 @@ class EasyLocalizationAdapter implements LocalizationProvider {
   bool get isReady => true;
 }
 
-/// Simple localization provider using a map of translations.
+/// **Deprecated:** Use [PreIndexedLocalizationProvider] from
+/// `package:flutter_settings_framework/src/localization/easy_localization_adapter.dart`
+/// instead, which provides the same functionality with a clearer name.
 ///
-/// Useful for testing or simple apps without a full i18n setup.
+/// Kept for backward compatibility.
+@Deprecated('Use PreIndexedLocalizationProvider instead')
 class MapLocalizationProvider implements LocalizationProvider {
   /// Translations: locale code -> key -> translation.
   final Map<String, Map<String, String>> translations;

@@ -15,18 +15,14 @@ import '../core/search_index.dart';
 
 /// Provider for the settings controller.
 ///
-/// This must be overridden in your app to provide the actual controller:
-/// ```dart
-/// final settingsControllerProvider = Provider<SettingsController>((ref) {
-///   throw UnimplementedError('Override this provider');
-/// });
-/// ```
-///
-/// Or use [createSettingsProviders] to generate all providers at once.
+/// Override in your app with the controller from [initializeSettings()].
+/// For the ref extension ([ref.settings], [ref.watchSetting]) to work,
+/// override all three: [settingsControllerProvider], [settingsSearchIndexProvider],
+/// and [settingsProvidersProvider] with the same [SettingsProviders] instance.
 final settingsControllerProvider = Provider<SettingsController>((ref) {
   throw UnimplementedError(
     'settingsControllerProvider must be overridden. '
-    'Use createSettingsProviders() or override manually.',
+    'Use initializeSettings() and override with the returned instance.',
   );
 });
 
@@ -34,7 +30,23 @@ final settingsControllerProvider = Provider<SettingsController>((ref) {
 final settingsSearchIndexProvider = Provider<SearchIndex>((ref) {
   throw UnimplementedError(
     'settingsSearchIndexProvider must be overridden. '
-    'Use createSettingsProviders() or override manually.',
+    'Use initializeSettings() and override with the returned instance.',
+  );
+});
+
+/// Provider for the settings providers container.
+///
+/// Override this in your app with the result of [initializeSettings()]
+/// so that [SettingsRefExtension.settings] and the parameterless
+/// [watchSetting]/[readSetting]/[updateSetting]/[resetSetting] work.
+///
+/// For the ref extension to work, override all three:
+/// [settingsControllerProvider], [settingsSearchIndexProvider], and
+/// [settingsProvidersProvider] with the same [SettingsProviders] instance.
+final settingsProvidersProvider = Provider<SettingsProviders>((ref) {
+  throw UnimplementedError(
+    'settingsProvidersProvider must be overridden. '
+    'Call initializeSettings() and add overrideWithValue(settings) to ProviderScope.',
   );
 });
 
@@ -137,12 +149,15 @@ class SettingsProviders {
   }
 
   /// Get or create a provider for a setting.
+  /// Cached by setting key so that all consumers share the same provider instance
+  /// and state updates (e.g. language) propagate correctly everywhere.
   NotifierProvider<SettingNotifier<T>, T> provider<T>(
     SettingDefinition<T> setting,
   ) {
-    // Always create a new provider with the correct type to avoid type mismatches
-    // The provider is lightweight and Riverpod will handle caching internally
-    return createSettingProvider<T>(setting, () => controller);
+    return _providers.putIfAbsent(
+      setting.key,
+      () => createSettingProvider<T>(setting, () => controller),
+    ) as NotifierProvider<SettingNotifier<T>, T>;
   }
 
   /// Get a provider by key.
@@ -163,28 +178,25 @@ class SettingsProviders {
 
 /// Initialize the settings framework for Riverpod.
 ///
-/// Returns a [SettingsProviders] instance containing all providers.
+/// Returns a [SettingsProviders] instance. Override all three providers
+/// so that [ref.settings], [ref.watchSetting], and [settingsSearchResultsProvider] work:
 ///
-/// Example:
 /// ```dart
-/// Future<void> main() async {
-///   WidgetsFlutterBinding.ensureInitialized();
+/// final settings = await initializeSettings(
+///   registry: myRegistry,
+///   storage: SharedPreferencesStorage(),
+/// );
 ///
-///   final settings = await initializeSettings(
-///     registry: myRegistry,
-///     storage: SharedPreferencesStorage(),
-///   );
-///
-///   runApp(
-///     ProviderScope(
-///       overrides: [
-///         settingsControllerProvider.overrideWithValue(settings.controller),
-///         settingsSearchIndexProvider.overrideWithValue(settings.searchIndex),
-///       ],
-///       child: MyApp(),
-///     ),
-///   );
-/// }
+/// runApp(
+///   ProviderScope(
+///     overrides: [
+///       settingsControllerProvider.overrideWithValue(settings.controller),
+///       settingsSearchIndexProvider.overrideWithValue(settings.searchIndex),
+///       settingsProvidersProvider.overrideWithValue(settings),
+///     ],
+///     child: MyApp(),
+///   ),
+/// );
 /// ```
 Future<SettingsProviders> initializeSettings({
   required SettingsRegistry registry,
@@ -213,19 +225,53 @@ Future<SettingsProviders> initializeSettings({
 }
 
 /// Extension methods for convenient access to settings in widgets.
+///
+/// Use [settings] plus the single-argument methods when [settingsProvidersProvider]
+/// is overridden. Use the two-argument methods when you already have a
+/// [SettingsProviders] instance.
 extension SettingsRefExtension on WidgetRef {
-  /// Watch a setting value.
-  T watchSetting<T>(SettingsProviders settings, SettingDefinition<T> setting) {
+  /// The settings providers container from [settingsProvidersProvider].
+  /// Requires [settingsProvidersProvider] to be overridden at the app root.
+  SettingsProviders get settings => read(settingsProvidersProvider);
+
+  /// Watch a setting value (uses [settings] from provider).
+  T watchSetting<T>(SettingDefinition<T> setting) {
     return watch(settings.provider(setting));
   }
 
-  /// Read a setting value (without watching).
-  T readSetting<T>(SettingsProviders settings, SettingDefinition<T> setting) {
+  /// Read a setting value without watching (uses [settings] from provider).
+  T readSetting<T>(SettingDefinition<T> setting) {
     return read(settings.provider(setting));
   }
 
-  /// Update a setting value.
-  Future<bool> updateSetting<T>(
+  /// Update a setting value (uses [settings] from provider).
+  Future<bool> updateSetting<T>(SettingDefinition<T> setting, T value) {
+    return read(settings.provider(setting).notifier).set(value);
+  }
+
+  /// Reset a setting to its default value (uses [settings] from provider).
+  Future<bool> resetSetting<T>(SettingDefinition<T> setting) {
+    return read(settings.provider(setting).notifier).reset();
+  }
+
+  /// Watch a setting value when you already have [SettingsProviders].
+  T watchSettingWith<T>(
+    SettingsProviders settings,
+    SettingDefinition<T> setting,
+  ) {
+    return watch(settings.provider(setting));
+  }
+
+  /// Read a setting value without watching when you have [SettingsProviders].
+  T readSettingWith<T>(
+    SettingsProviders settings,
+    SettingDefinition<T> setting,
+  ) {
+    return read(settings.provider(setting));
+  }
+
+  /// Update a setting value when you have [SettingsProviders].
+  Future<bool> updateSettingWith<T>(
     SettingsProviders settings,
     SettingDefinition<T> setting,
     T value,
@@ -233,8 +279,8 @@ extension SettingsRefExtension on WidgetRef {
     return read(settings.provider(setting).notifier).set(value);
   }
 
-  /// Reset a setting to its default value.
-  Future<bool> resetSetting<T>(
+  /// Reset a setting when you have [SettingsProviders].
+  Future<bool> resetSettingWith<T>(
     SettingsProviders settings,
     SettingDefinition<T> setting,
   ) {
@@ -242,15 +288,40 @@ extension SettingsRefExtension on WidgetRef {
   }
 }
 
-/// Provider for search results.
+/// Whether a setting is enabled based on its [SettingDefinition.dependsOn] and
+/// [SettingDefinition.enabledWhen]. Use when building tiles so dependent
+/// settings are disabled until the dependency is met.
 ///
-/// Use this with a family provider for the search query:
-/// ```dart
-/// final settingsSearchProvider = Provider.family<List<SearchResult>, String>((ref, query) {
-///   final index = ref.watch(settingsSearchIndexProvider);
-///   return index.search(query);
-/// });
-/// ```
+/// Returns true if [setting] has no [SettingDefinition.dependsOn], or the
+/// dependency setting is not in the registry, or the watched dependency value
+/// equals [SettingDefinition.enabledWhen].
+bool isSettingEnabled(
+  SettingsProviders settings,
+  SettingDefinition setting,
+  WidgetRef ref,
+) {
+  if (setting.dependsOn == null) return true;
+  final depSetting = settings.registry.get<Object>(setting.dependsOn!);
+  if (depSetting == null) return true;
+  final depValue = ref.watch(settings.provider(depSetting));
+  return depValue == setting.enabledWhen;
+}
+
+/// Built-in provider for search results by query.
+///
+/// Works when [settingsSearchIndexProvider] (and typically
+/// [settingsProvidersProvider]) is overridden. Use in widgets:
+/// `ref.watch(settingsSearchResultsProvider(query))`.
+final settingsSearchResultsProvider =
+    Provider.family<List<SearchResult>, String>((ref, query) {
+  if (query.isEmpty) return [];
+  final index = ref.watch(settingsSearchIndexProvider);
+  return index.search(query);
+});
+
+/// Provider for search results (legacy; prefer [settingsSearchResultsProvider]).
+///
+/// Use this when you have a [SearchIndex] instance and want a one-off provider.
 Provider<List<SearchResult>> createSearchProvider(
   SearchIndex searchIndex,
   String query,
@@ -261,13 +332,11 @@ Provider<List<SearchResult>> createSearchProvider(
   });
 }
 
-/// Creates an auto-dispose provider for a setting.
+/// **Deprecated:** This function does not provide actual auto-dispose
+/// behavior — it simply delegates to [createSettingProvider].
 ///
-/// Use this for settings that are only accessed in specific screens
-/// and don't need to persist in memory.
-///
-/// Note: This uses a regular NotifierProvider. For true auto-dispose behavior,
-/// consider using ref.keepAlive() selectively in your notifiers.
+/// Use [createSettingProvider] directly instead.
+@Deprecated('Use createSettingProvider instead — this has no auto-dispose behavior')
 NotifierProvider<SettingNotifier<T>, T> createAutoDisposeSettingProvider<T>(
   SettingDefinition<T> setting,
   SettingsController Function() getController,
@@ -303,10 +372,12 @@ class SettingsProviderFactory {
         as NotifierProvider<SettingNotifier<T>, T>;
   }
 
-  /// Create an auto-dispose provider for a setting.
+  /// **Deprecated:** Use [create] instead — this has no auto-dispose behavior.
+  @Deprecated('Use create instead — this has no auto-dispose behavior')
   NotifierProvider<SettingNotifier<T>, T> createAutoDispose<T>(
     SettingDefinition<T> setting,
   ) {
+    // ignore: deprecated_member_use_from_same_package
     return createAutoDisposeSettingProvider(setting, () => controller);
   }
 }
