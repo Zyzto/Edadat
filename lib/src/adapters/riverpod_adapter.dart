@@ -78,12 +78,25 @@ class SettingNotifier<T> extends Notifier<T> {
   }
 
   /// Set the setting value.
+  ///
+  /// Updates [state] immediately so switches/subtitles rebuild without waiting
+  /// on disk I/O, then persists. Reverts if persistence/validation fails.
   Future<bool> set(T value) async {
-    final success = await getController().set(setting, value);
-    if (success) {
-      state = value;
+    if (state == value) {
+      return getController().set(setting, value);
     }
-    return success;
+    final previous = state;
+    state = value;
+    try {
+      final success = await getController().set(setting, value);
+      if (!success) {
+        state = previous;
+      }
+      return success;
+    } catch (_) {
+      state = previous;
+      rethrow;
+    }
   }
 
   /// Reset to default value.

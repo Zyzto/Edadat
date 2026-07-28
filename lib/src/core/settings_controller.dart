@@ -224,22 +224,28 @@ class SettingsController {
 
     // Convert to storable format
     final storable = setting.toStorable(value);
+    final previousStorable = _cache[setting.key];
 
-    // Write to storage
-    final success = await _writeToStorage(setting, storable);
-    if (!success) return false;
-
-    // Track for undo
+    // Update cache + notify first so UI can rebuild without waiting on I/O.
+    _cache[setting.key] = storable;
     if (trackUndo) {
       _addUndoEntry(setting, oldValue);
     }
-
-    // Update cache
-    _cache[setting.key] = storable;
-
-    // Notify listeners
     if (notify) {
       _notifyChange(setting, oldValue, value);
+    }
+
+    final success = await _writeToStorage(setting, storable);
+    if (!success) {
+      _cache[setting.key] = previousStorable;
+      if (notify) {
+        _notifyChange(setting, value, oldValue);
+      }
+      if (trackUndo && _undoStack.isNotEmpty) {
+        _undoStack.removeLast();
+        _canUndoController.add(_undoStack.isNotEmpty);
+      }
+      return false;
     }
 
     return true;
