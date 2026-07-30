@@ -42,26 +42,29 @@ class SettingAnchorRegistry {
   }) async {
     highlightedKey.value = settingKey;
 
-    if (knownOffset != null && controller != null && controller.hasClients) {
-      final max = controller.position.maxScrollExtent;
-      await controller.animateTo(
-        knownOffset.clamp(0.0, max),
+    final ctx = keyFor(settingKey).currentContext;
+    if (ctx != null) {
+      await Scrollable.ensureVisible(
+        ctx,
         duration: const Duration(milliseconds: 280),
         curve: Curves.easeOutCubic,
+        alignment: alignment,
       );
-    } else {
-      final ctx = keyFor(settingKey).currentContext;
-      if (ctx != null) {
+    } else if (knownOffset != null &&
+        controller != null &&
+        controller.hasClients) {
+      // Instant relocate (avoid a second animated pan that fights the host).
+      final max = controller.position.maxScrollExtent;
+      controller.jumpTo(knownOffset.clamp(0.0, max));
+      await WidgetsBinding.instance.endOfFrame;
+      final after = keyFor(settingKey).currentContext;
+      if (after != null) {
         await Scrollable.ensureVisible(
-          ctx,
+          after,
           duration: const Duration(milliseconds: 280),
           curve: Curves.easeOutCubic,
           alignment: alignment,
         );
-      } else if (controller != null &&
-          controller.hasClients &&
-          knownOffset == null) {
-        // No context yet; caller should expand section and retry.
       }
     }
 

@@ -20,10 +20,10 @@ dependencies:
   flutter_settings_framework:
     git:
       url: https://github.com/Zyzto/edadat.git
-      ref: v0.5.0
+      ref: v0.5.1
 ```
 
-Current version: **0.5.0**.
+Current version: **0.5.1**.
 
 ## Quick Start
 

@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.1] - 2026-07-30
+
+### Fixed
+- **`SettingAnchorRegistry.scrollTo`**: use `jumpTo` + a single
+  `ensureVisible` instead of an animated pan that flickered when hosts also
+  scrolled to the section.
+
 ## [0.5.0] - 2026-07-30
 
 Baseline release under the new tag/CI system (`v0.5.0`).
