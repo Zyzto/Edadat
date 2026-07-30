@@ -42,14 +42,18 @@ class SettingAnchorRegistry {
   }) async {
     highlightedKey.value = settingKey;
 
-    final ctx = keyFor(settingKey).currentContext;
-    if (ctx != null) {
-      await Scrollable.ensureVisible(
-        ctx,
+    Future<void> ensure(BuildContext target) {
+      return Scrollable.ensureVisible(
+        target,
         duration: const Duration(milliseconds: 280),
         curve: Curves.easeOutCubic,
         alignment: alignment,
       );
+    }
+
+    final ctx = keyFor(settingKey).currentContext;
+    if (ctx != null) {
+      await ensure(ctx);
     } else if (knownOffset != null &&
         controller != null &&
         controller.hasClients) {
@@ -58,13 +62,8 @@ class SettingAnchorRegistry {
       controller.jumpTo(knownOffset.clamp(0.0, max));
       await WidgetsBinding.instance.endOfFrame;
       final after = keyFor(settingKey).currentContext;
-      if (after != null) {
-        await Scrollable.ensureVisible(
-          after,
-          duration: const Duration(milliseconds: 280),
-          curve: Curves.easeOutCubic,
-          alignment: alignment,
-        );
+      if (after != null && after.mounted) {
+        await ensure(after);
       }
     }
 
