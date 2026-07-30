@@ -57,6 +57,7 @@ class SearchResult {
 /// 1. The setting key
 /// 2. Search terms defined in [SettingDefinition.searchTerms] (all languages)
 /// 3. Translated titles/subtitles from the localization provider (all locales)
+/// 4. Translated section titles for the setting's section (all locales)
 ///
 /// This allows users to search in any language, regardless of the current UI language.
 ///
@@ -64,7 +65,7 @@ class SearchResult {
 /// ```dart
 /// final index = SearchIndex(
 ///   registry: registry,
-///   localizationProvider: EasyLocalizationAdapter(),
+///   localizationProvider: PreIndexedLocalizationProvider({...}),
 /// );
 /// await index.build();
 ///
@@ -83,6 +84,9 @@ class SearchIndex {
 
   /// Reverse index: setting key -> set of indexed terms.
   final Map<String, Set<String>> _keyToTerms = {};
+
+  /// Locale associated with an indexed term (when known).
+  final Map<String, String> _termToLocale = {};
 
   /// Whether the index has been built.
   bool _built = false;
@@ -103,6 +107,7 @@ class SearchIndex {
   Future<void> build() async {
     _termToKeys.clear();
     _keyToTerms.clear();
+    _termToLocale.clear();
 
     for (final setting in registry.settings) {
       _indexSetting(setting);
@@ -124,49 +129,68 @@ class SearchIndex {
 
     // Index by search terms in all languages
     for (final entry in setting.searchTerms.entries) {
+      final localeCode = entry.key;
       for (final term in entry.value) {
-        _addToIndex(term.toLowerCase(), setting.key);
+        _addToIndex(term.toLowerCase(), setting.key, locale: localeCode);
       }
     }
 
-    // Index by translated titles if localization is available
+    // Index by translated titles / section titles if localization is available
     if (localizationProvider?.isReady == true) {
+      final section = setting.section != null
+          ? registry.getSection(setting.section!)
+          : null;
+
       for (final locale in localizationProvider!.supportedLocales) {
-        // Index title
+        final localeCode = locale.languageCode;
+
         final title = localizationProvider!.translate(
           setting.titleKey,
           locale: locale,
         );
-        _indexText(title, setting.key);
+        _indexText(title, setting.key, locale: localeCode);
 
-        // Index subtitle if available
         if (setting.subtitleKey != null) {
           final subtitle = localizationProvider!.translate(
             setting.subtitleKey!,
             locale: locale,
           );
-          _indexText(subtitle, setting.key);
+          _indexText(subtitle, setting.key, locale: localeCode);
+        }
+
+        if (section != null) {
+          final sectionTitle = localizationProvider!.translate(
+            section.titleKey,
+            locale: locale,
+          );
+          _indexText(sectionTitle, setting.key, locale: localeCode);
         }
       }
     }
   }
 
-  void _indexText(String text, String settingKey) {
+  void _indexText(String text, String settingKey, {String? locale}) {
+    if (text.isEmpty) return;
+
     // Index the full text
-    _addToIndex(text.toLowerCase(), settingKey);
+    _addToIndex(text.toLowerCase(), settingKey, locale: locale);
 
     // Index individual words
     final words = text.split(RegExp(r'\s+'));
     for (final word in words) {
       if (word.length >= 2) {
-        _addToIndex(word.toLowerCase(), settingKey);
+        _addToIndex(word.toLowerCase(), settingKey, locale: locale);
       }
     }
   }
 
-  void _addToIndex(String term, String settingKey) {
+  void _addToIndex(String term, String settingKey, {String? locale}) {
+    if (term.isEmpty) return;
     _termToKeys.putIfAbsent(term, () => {}).add(settingKey);
     _keyToTerms.putIfAbsent(settingKey, () => {}).add(term);
+    if (locale != null) {
+      _termToLocale.putIfAbsent(term, () => locale);
+    }
   }
 
   /// Rebuild the index.
@@ -201,13 +225,15 @@ class SearchIndex {
     // Track scores for each setting
     final scores = <String, _ScoreAccumulator>{};
 
-    for (final word in queryWords) {
-      _searchWord(word, scores);
+    for (var i = 0; i < queryWords.length; i++) {
+      _searchWord(queryWords[i], i, scores);
     }
 
     // Filter to settings that matched all query words (for multi-word queries)
     if (queryWords.length > 1) {
-      scores.removeWhere((key, acc) => acc.wordMatches < queryWords.length);
+      scores.removeWhere(
+        (key, acc) => acc.matchedWordIndexes.length < queryWords.length,
+      );
     }
 
     // Convert to results
@@ -230,20 +256,29 @@ class SearchIndex {
     return results;
   }
 
-  void _searchWord(String word, Map<String, _ScoreAccumulator> scores) {
+  void _searchWord(
+    String word,
+    int wordIndex,
+    Map<String, _ScoreAccumulator> scores,
+  ) {
     // Exact matches
     final exactMatches = _termToKeys[word];
     if (exactMatches != null) {
       for (final key in exactMatches) {
         scores.putIfAbsent(key, () => _ScoreAccumulator());
-        scores[key]!.addMatch(word, 10.0);
+        scores[key]!.addMatch(
+          word,
+          10.0,
+          wordIndex: wordIndex,
+          locale: _termToLocale[word],
+        );
       }
     }
 
     // Prefix and contains matches
     for (final entry in _termToKeys.entries) {
       final term = entry.key;
-      
+
       // Skip exact matches (already handled)
       if (term == word) continue;
 
@@ -262,7 +297,12 @@ class SearchIndex {
       if (score > 0) {
         for (final key in entry.value) {
           scores.putIfAbsent(key, () => _ScoreAccumulator());
-          scores[key]!.addMatch(term, score);
+          scores[key]!.addMatch(
+            term,
+            score,
+            wordIndex: wordIndex,
+            locale: _termToLocale[term],
+          );
         }
       }
     }
@@ -271,7 +311,7 @@ class SearchIndex {
   /// Simple fuzzy matching using Levenshtein distance threshold.
   bool _fuzzyMatch(String query, String term) {
     if ((query.length - term.length).abs() > 3) return false;
-    
+
     // Simple character overlap check
     int matches = 0;
     for (final char in query.split('')) {
@@ -292,32 +332,39 @@ class SearchIndex {
         'avgTermsPerSetting': _keyToTerms.isEmpty
             ? 0
             : (_termToKeys.values.fold<int>(
-                    0, (sum, set) => sum + set.length) /
-                _keyToTerms.length)
-            .round(),
+                        0, (sum, set) => sum + set.length) /
+                    _keyToTerms.length)
+                .round(),
       };
 
   /// Clear the index.
   void clear() {
     _termToKeys.clear();
     _keyToTerms.clear();
+    _termToLocale.clear();
     _built = false;
   }
 }
 
 class _ScoreAccumulator {
   double totalScore = 0;
-  int wordMatches = 0;
+  final Set<int> matchedWordIndexes = {};
   String bestMatch = '';
   String? bestMatchLocale;
   double _bestScore = 0;
 
-  void addMatch(String term, double score) {
+  void addMatch(
+    String term,
+    double score, {
+    required int wordIndex,
+    String? locale,
+  }) {
     totalScore += score;
-    wordMatches++;
+    matchedWordIndexes.add(wordIndex);
     if (score > _bestScore) {
       _bestScore = score;
       bestMatch = term;
+      bestMatchLocale = locale;
     }
   }
 }
@@ -328,7 +375,8 @@ class _ScoreAccumulator {
 /// method simply returns the key unchanged.
 ///
 /// Kept for backward compatibility.
-@Deprecated('Use EasyLocalizationAdapterImpl for real easy_localization integration')
+@Deprecated(
+    'Use EasyLocalizationAdapterImpl for real easy_localization integration')
 class EasyLocalizationAdapter implements LocalizationProvider {
   final List<Locale> _supportedLocales;
 
@@ -371,4 +419,3 @@ class MapLocalizationProvider implements LocalizationProvider {
   @override
   bool get isReady => translations.isNotEmpty;
 }
-

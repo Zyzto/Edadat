@@ -142,11 +142,13 @@ class SettingsController {
         return storage.getStringList(setting.key);
       case SettingType.color:
         return storage.getInt(setting.key);
+      case SettingType.action:
+        return null;
     }
   }
 
   Future<bool> _writeToStorage(SettingDefinition setting, Object? value) async {
-    if (!setting.persist) return true;
+    if (!setting.persist || setting.type == SettingType.action) return true;
     if (value == null) return storage.remove(setting.key);
 
     switch (setting.type) {
@@ -162,6 +164,8 @@ class SettingsController {
         return storage.setStringList(setting.key, value as List<String>);
       case SettingType.color:
         return storage.setInt(setting.key, value as int);
+      case SettingType.action:
+        return true;
     }
   }
 

@@ -37,6 +37,7 @@ export 'src/adapters/riverpod_adapter.dart';
 export 'src/ui/responsive_helpers.dart';
 export 'src/ui/settings_tile.dart';
 export 'src/ui/settings_section.dart';
+export 'src/ui/setting_scroll_target.dart';
 export 'src/ui/snackbar_helper.dart';
 export 'src/ui/registry_settings_page.dart';
 

@@ -8,7 +8,7 @@ library;
 import 'package:flutter/material.dart';
 
 /// The type of a setting value for serialization purposes.
-enum SettingType { string, int, double, bool, stringList, color }
+enum SettingType { string, int, double, bool, stringList, color, action }
 
 /// Edit mode for settings - determines how the setting value is changed.
 enum SettingEditMode {
@@ -448,6 +448,35 @@ class EnumSetting extends StringSetting {
 
   /// Get the icon for an option value.
   IconData? getIcon(String value) => optionIcons?[value];
+}
+
+/// Non-persisted action / navigation row for search and jump targets.
+///
+/// Use for export, about, privacy policy, etc. — rows that appear in settings
+/// UI but are not stored values. Indexed by [SearchIndex] like other settings.
+class ActionSetting extends SettingDefinition<bool> {
+  const ActionSetting(
+    String key, {
+    required super.titleKey,
+    super.subtitleKey,
+    super.searchTerms,
+    super.icon,
+    super.section,
+    super.subSection,
+    super.order,
+    super.visible,
+  }) : super(
+          key: key,
+          defaultValue: false,
+          type: SettingType.action,
+          persist: false,
+        );
+
+  @override
+  Object? toStorable(bool value) => null;
+
+  @override
+  bool fromStorable(Object? stored) => defaultValue;
 }
 
 /// Section definition for grouping settings.

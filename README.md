@@ -79,12 +79,25 @@ Override all three providers so that `ref.settings`, `ref.watchSetting(setting)`
 ```dart
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // Load translation maps for true bilingual search (all locales at once).
+  // EasyLocalizationAdapterImpl only indexes the *current* UI locale.
+  final en = Map<String, String>.from(
+    jsonDecode(await rootBundle.loadString('assets/translations/en.json')) as Map,
+  );
+  final ar = Map<String, String>.from(
+    jsonDecode(await rootBundle.loadString('assets/translations/ar.json')) as Map,
+  );
+
   final settings = await initializeSettings(
     registry: createMyRegistry(),
     storage: SharedPreferencesStorage(),
+    localizationProvider: PreIndexedLocalizationProvider({
+      'en': en,
+      'ar': ar,
+    }),
   );
-  
+
   runApp(
     ProviderScope(
       overrides: [
@@ -159,28 +172,47 @@ Search results use the built-in provider: `ref.watch(settingsSearchResultsProvid
 | Color | `ColorSetting` | Theme colors |
 | Enum | `EnumSetting` | Limited options |
 | String List | `StringListSetting` | Tags, filters |
+| Action | `ActionSetting` | Export, about, privacy (non-persisted search/jump targets) |
 
 ## Multi-Language Search
 
-The framework supports searching settings in any language:
+The framework supports searching settings in any language. Pass
+`PreIndexedLocalizationProvider` at `initializeSettings` so titles, subtitles,
+and **section titles** are indexed for every locale. Add `searchTerms` for
+synonyms users type that are not in the label:
 
 ```dart
-// Define search terms for each language
+// Synonyms (optional; titles are indexed via PreIndexedLocalizationProvider)
 const languageSetting = EnumSetting(
   'language',
   defaultValue: 'en',
   titleKey: 'language',
   options: ['en', 'ar'],
   searchTerms: {
-    'en': ['language', 'english', 'arabic', 'locale'],
-    'ar': ['اللغة', 'إنجليزي', 'عربي'],
+    'en': ['locale', 'english', 'arabic'],
+    'ar': ['لغة', 'إنجليزي', 'عربي'],
   },
 );
 
-// Search works in any language
+// Non-persisted rows (export, about, …) — still searchable:
+const exportAction = ActionSetting(
+  'action_export',
+  titleKey: 'export_data',
+  section: 'data',
+  icon: Icons.upload,
+  searchTerms: {
+    'en': ['backup', 'download'],
+    'ar': ['تصدير'],
+  },
+);
+
+// Search works in any language regardless of UI locale
 final results = searchIndex.search('عربي'); // Finds language setting
 final results2 = searchIndex.search('arabic'); // Also finds it
 ```
+
+Set `visible: false` on internal settings so they never appear in search results
+(`order` alone does not hide them from [SearchIndex]).
 
 ## UI Components
 
@@ -197,15 +229,17 @@ final results2 = searchIndex.search('arabic'); // Also finds it
 ### Layout
 - `SettingsSectionWidget` - Collapsible section
 - `SettingsSubsectionHeader` - Section dividers
-- `SettingsSearchBar` - Expandable search
+- `SettingsSearchBar` - `SettingsSearchBarMode.persistent` (full-width) or `.compact` (icon expand)
+- `SettingAnchorRegistry` / `SettingAnchor` / `scrollToSetting` - jump-to + highlight after search
 - `SplitScreenLayout` - List/detail for tablets
-- `RegistrySettingsPage` - Full settings page from registry (sections, default tiles by type, search, landscape split). Use `sectionContentBuilder` for custom sections (e.g. About, Data).
+- `RegistrySettingsPage` - Full settings page from registry (persistent search, sections, default tiles by type, landscape split, result tap → scroll/highlight). Use `sectionContentBuilder` for custom sections (e.g. About, Data).
 - `CardSettingsSection` - Card-style collapsible section with optional landscape selection
 
 ### Helpers
 - `ref.settings` - Access [SettingsProviders] when [settingsProvidersProvider] is overridden
 - `ref.watchSetting(setting)` / `ref.readSetting(setting)` / `ref.updateSetting(setting, value)` / `ref.resetSetting(setting)` - Convenience methods using `ref.settings`
 - `settingsSearchResultsProvider(query)` - Built-in family provider for search results
+- `buildSearchResultWidgets` - Grouped results with optional breadcrumb + `onResultSelected`
 - `isSettingEnabled(settings, setting, ref)` - Whether a setting is enabled (respects `dependsOn` / `enabledWhen`)
 
 ### Dialogs

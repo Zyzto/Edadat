@@ -9,9 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../adapters/riverpod_adapter.dart';
+import '../core/search_index.dart';
 import '../core/setting_definition.dart';
 import '../core/settings_registry.dart';
 import 'responsive_helpers.dart';
+import 'setting_scroll_target.dart';
 import 'settings_section.dart';
 import 'settings_tile.dart';
 
@@ -24,6 +26,9 @@ import 'settings_tile.dart';
 /// Use [sectionContentBuilder] to supply custom content for sections (e.g.
 /// Tags, Data, About) that are not just a list of settings. Use [tileBuilder]
 /// to override or wrap the default tile for specific settings.
+///
+/// Search uses a persistent bar under the app bar. Selecting a result clears
+/// the query, expands the section, and scrolls to / highlights the setting.
 class RegistrySettingsPage extends ConsumerStatefulWidget {
   /// Registry containing sections and setting definitions.
   final SettingsRegistry registry;
@@ -63,6 +68,12 @@ class RegistrySettingsPage extends ConsumerStatefulWidget {
   final void Function(String sectionId, bool expanded)?
       onSectionExpansionChanged;
 
+  /// Optional: filter search results before display (e.g. hide platform sections).
+  final bool Function(SearchResult result)? searchResultFilter;
+
+  /// Empty-results message. Receives the query.
+  final String Function(String query)? emptySearchMessageBuilder;
+
   const RegistrySettingsPage({
     super.key,
     required this.registry,
@@ -76,6 +87,8 @@ class RegistrySettingsPage extends ConsumerStatefulWidget {
     this.tileBuilder,
     this.isSectionExpanded,
     this.onSectionExpansionChanged,
+    this.searchResultFilter,
+    this.emptySearchMessageBuilder,
   });
 
   static String _defaultSectionTitleBuilder(String key) => key;
@@ -88,33 +101,28 @@ class RegistrySettingsPage extends ConsumerStatefulWidget {
 class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
+  final SettingAnchorRegistry _anchors = SettingAnchorRegistry();
   String _searchQuery = '';
-  bool _isSearchExpanded = false;
   final Map<String, bool> _sectionExpanded = {};
   String? _selectedSectionId;
   Widget? _detailContent;
   String? _detailTitle;
+  String? _pendingScrollKey;
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
-    _searchFocusNode.addListener(_onSearchFocusChanged);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _scrollController.dispose();
+    _anchors.dispose();
     super.dispose();
-  }
-
-  void _onSearchFocusChanged() {
-    if (!_searchFocusNode.hasFocus &&
-        _searchController.text.trim().isEmpty &&
-        _isSearchExpanded) {
-      setState(() => _isSearchExpanded = false);
-    }
   }
 
   void _onSearchChanged() {
@@ -136,6 +144,27 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
     }
   }
 
+  Future<void> _onResultSelected(SearchResult result) async {
+    final setting = result.setting;
+    final sectionKey = setting.section;
+    setState(() {
+      _searchController.clear();
+      _searchQuery = '';
+      _pendingScrollKey = setting.key;
+      if (sectionKey != null) {
+        _sectionExpanded[sectionKey] = true;
+        widget.onSectionExpansionChanged?.call(sectionKey, true);
+      }
+    });
+    _searchFocusNode.unfocus();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _pendingScrollKey != setting.key) return;
+      await _anchors.scrollTo(setting.key, controller: _scrollController);
+      _pendingScrollKey = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
@@ -146,9 +175,12 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
 
     final sections = hasSearch
         ? _buildSearchResults(settings, registry)
-        : _buildSections(settings, registry, isLandscape, hasSearch);
+        : _buildSections(settings, registry, isLandscape);
 
-    final listView = ListView(children: sections);
+    final listView = ListView(
+      controller: hasSearch ? null : _scrollController,
+      children: sections,
+    );
 
     if (!isLandscape && _selectedSectionId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -183,60 +215,21 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
-        actions: [_buildSearchBar()],
       ),
-      body: bodyContent,
-    );
-  }
-
-  Widget _buildSearchBar() {
-    if (!_isSearchExpanded) {
-      return IconButton(
-        icon: const Icon(Icons.search),
-        onPressed: () {
-          setState(() => _isSearchExpanded = true);
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _searchFocusNode.requestFocus();
-          });
-        },
-        tooltip: widget.searchHint,
-      );
-    }
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: 300,
-      child: TextField(
-        controller: _searchController,
-        focusNode: _searchFocusNode,
-        autofocus: true,
-        decoration: InputDecoration(
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() {
-                      _isSearchExpanded = false;
-                      _searchQuery = '';
-                    });
-                  },
-                )
-              : null,
-          hintText: widget.searchHint,
-          border: const OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(24)),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: SettingsSearchBar(
+              mode: SettingsSearchBarMode.persistent,
+              hintText: widget.searchHint,
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              onChanged: (_) {},
+            ),
           ),
-          isDense: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        ),
-        textInputAction: TextInputAction.search,
-        onTapOutside: (_) {
-          if (_searchController.text.trim().isEmpty) {
-            setState(() => _isSearchExpanded = false);
-          }
-        },
+          Expanded(child: bodyContent),
+        ],
       ),
     );
   }
@@ -245,7 +238,6 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
     SettingsProviders settings,
     SettingsRegistry registry,
     bool isLandscape,
-    bool hasSearch,
   ) {
     final result = <Widget>[];
     final sortedSections = registry.getSortedSections();
@@ -261,7 +253,7 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
       }
       if (children.isEmpty && visibleSettings.isEmpty) continue;
 
-      final isExpanded = hasSearch ? true : _isSectionExpanded(section);
+      final isExpanded = _isSectionExpanded(section);
       final sectionTitle = widget.sectionTitleBuilder(section.titleKey);
       final icon = section.icon ?? Icons.settings;
 
@@ -270,9 +262,8 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
           title: sectionTitle,
           icon: icon,
           isExpanded: isExpanded,
-          onExpansionChanged: hasSearch
-              ? null
-              : (expanded) => _onSectionExpansionChanged(section.key, expanded),
+          onExpansionChanged: (expanded) =>
+              _onSectionExpansionChanged(section.key, expanded),
           sectionId: section.key,
           isSelected: _selectedSectionId == section.key && isLandscape,
           isLandscape: isLandscape,
@@ -311,8 +302,15 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
         ));
       }
       for (final setting in settingsList) {
+        if (setting is ActionSetting) {
+          final tile = _buildTileForSetting(settings, setting);
+          if (tile != null) {
+            result.add(_anchors.wrap(setting.key, tile));
+          }
+          continue;
+        }
         final tile = _buildTileForSetting(settings, setting);
-        if (tile != null) result.add(tile);
+        if (tile != null) result.add(_anchors.wrap(setting.key, tile));
       }
     }
     return result;
@@ -334,12 +332,18 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
     SettingsProviders settings,
     SettingsRegistry registry,
   ) {
-    final results = ref.watch(settingsSearchResultsProvider(_searchQuery));
+    var results = ref.watch(settingsSearchResultsProvider(_searchQuery));
+    final filter = widget.searchResultFilter;
+    if (filter != null) {
+      results = results.where(filter).toList();
+    }
     if (results.isEmpty) {
+      final message = widget.emptySearchMessageBuilder?.call(_searchQuery) ??
+          'No settings found for "$_searchQuery"';
       return [
         EmptySearchResults(
           query: _searchQuery,
-          message: 'No settings found for "$_searchQuery"',
+          message: message,
         ),
       ];
     }
@@ -347,9 +351,25 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
       results,
       tileBuilder: (setting) {
         final tile = _buildTileForSetting(settings, setting);
-        return tile ?? const SizedBox.shrink();
+        return tile ??
+            ListTile(
+              leading: setting.icon != null ? Icon(setting.icon) : null,
+              title: Text(widget.sectionTitleBuilder(setting.titleKey)),
+              subtitle: setting.subtitleKey != null
+                  ? Text(widget.sectionTitleBuilder(setting.subtitleKey!))
+                  : null,
+            );
       },
-      sectionTitleBuilder: (key) => widget.sectionTitleBuilder(key),
+      sectionTitleBuilder: (key) {
+        final section = registry.getSection(key);
+        if (section != null) {
+          return widget.sectionTitleBuilder(section.titleKey);
+        }
+        return widget.sectionTitleBuilder(key);
+      },
+      settingTitleBuilder: (setting) =>
+          widget.sectionTitleBuilder(setting.titleKey),
+      onResultSelected: _onResultSelected,
     );
   }
 
@@ -382,6 +402,14 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
       return widget.enumLabelBuilder?.call(value) ?? value;
     }
 
+    if (setting is ActionSetting) {
+      return ActionSettingsTile(
+        leading: setting.icon != null ? Icon(setting.icon) : null,
+        title: Text(title),
+        subtitle: subtitle != null ? Text(subtitle) : null,
+        onTap: null,
+      );
+    }
     if (setting is BoolSetting) {
       final value = ref.watch(settings.provider(setting));
       return SwitchSettingsTile.fromSetting(

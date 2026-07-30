@@ -127,6 +127,15 @@ class SettingsSubsectionHeader extends StatelessWidget {
 }
 
 /// Search bar for settings.
+/// Visual mode for [SettingsSearchBar].
+enum SettingsSearchBarMode {
+  /// Icon that expands into a fixed-width field (compact AppBar).
+  compact,
+
+  /// Always-visible full-width field (recommended for dense settings pages).
+  persistent,
+}
+
 class SettingsSearchBar extends StatefulWidget {
   /// Placeholder text.
   final String hintText;
@@ -137,14 +146,24 @@ class SettingsSearchBar extends StatefulWidget {
   /// Callback when search is submitted.
   final ValueChanged<String>? onSubmitted;
 
-  /// Whether search is currently expanded.
+  /// Whether search is currently expanded (compact mode only).
   final bool isExpanded;
 
-  /// Callback when expansion state changes.
+  /// Callback when expansion state changes (compact mode only).
   final ValueChanged<bool>? onExpandedChanged;
 
   /// Initial search query.
   final String? initialQuery;
+
+  /// Compact (icon) or persistent (always visible) layout.
+  final SettingsSearchBarMode mode;
+
+  /// Optional external controller (persistent mode). When set, the bar does
+  /// not dispose it.
+  final TextEditingController? controller;
+
+  /// Optional external focus node.
+  final FocusNode? focusNode;
 
   const SettingsSearchBar({
     super.key,
@@ -154,6 +173,9 @@ class SettingsSearchBar extends StatefulWidget {
     this.isExpanded = false,
     this.onExpandedChanged,
     this.initialQuery,
+    this.mode = SettingsSearchBarMode.compact,
+    this.controller,
+    this.focusNode,
   });
 
   @override
@@ -164,25 +186,53 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
   late bool _isExpanded;
+  late bool _ownsController;
+  late bool _ownsFocusNode;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.initialQuery);
-    _focusNode = FocusNode();
-    _isExpanded = widget.isExpanded;
+    _ownsController = widget.controller == null;
+    _ownsFocusNode = widget.focusNode == null;
+    _controller =
+        widget.controller ?? TextEditingController(text: widget.initialQuery);
+    _focusNode = widget.focusNode ?? FocusNode();
+    _isExpanded = widget.isExpanded || widget.mode == SettingsSearchBarMode.persistent;
 
     _focusNode.addListener(_onFocusChanged);
+    _controller.addListener(_onTextChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant SettingsSearchBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.mode == SettingsSearchBarMode.compact &&
+        widget.isExpanded != oldWidget.isExpanded) {
+      _isExpanded = widget.isExpanded;
+    }
+    if (widget.initialQuery != oldWidget.initialQuery &&
+        widget.initialQuery != null &&
+        widget.controller == null &&
+        _controller.text != widget.initialQuery) {
+      _controller.text = widget.initialQuery!;
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
+    _focusNode.removeListener(_onFocusChanged);
+    _controller.removeListener(_onTextChanged);
+    if (_ownsController) _controller.dispose();
+    if (_ownsFocusNode) _focusNode.dispose();
     super.dispose();
   }
 
+  void _onTextChanged() {
+    if (mounted) setState(() {});
+  }
+
   void _onFocusChanged() {
+    if (widget.mode == SettingsSearchBarMode.persistent) return;
     if (!_focusNode.hasFocus && _controller.text.isEmpty && _isExpanded) {
       _collapse();
     }
@@ -205,11 +255,64 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
   void _clear() {
     _controller.clear();
     widget.onChanged?.call('');
-    _collapse();
+    if (widget.mode == SettingsSearchBarMode.compact) {
+      _collapse();
+    } else {
+      setState(() {});
+    }
+  }
+
+  InputDecoration _decoration() {
+    return InputDecoration(
+      prefixIcon: const Icon(Icons.search),
+      suffixIcon: _controller.text.isNotEmpty
+          ? IconButton(
+              icon: const Icon(Icons.clear),
+              onPressed: _clear,
+            )
+          : null,
+      hintText: widget.hintText,
+      border: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(24)),
+      ),
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 12,
+      ),
+    );
+  }
+
+  Widget _textField({required bool autofocus, double? width}) {
+    final field = TextField(
+      controller: _controller,
+      focusNode: _focusNode,
+      autofocus: autofocus,
+      decoration: _decoration(),
+      textInputAction: TextInputAction.search,
+      onChanged: widget.onChanged,
+      onSubmitted: widget.onSubmitted,
+      onTapOutside: (_) {
+        if (widget.mode == SettingsSearchBarMode.compact &&
+            _controller.text.isEmpty) {
+          _collapse();
+        }
+      },
+    );
+    if (width == null) return field;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: width,
+      child: field,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.mode == SettingsSearchBarMode.persistent) {
+      return _textField(autofocus: false);
+    }
+
     if (!_isExpanded) {
       return IconButton(
         icon: const Icon(Icons.search),
@@ -218,41 +321,7 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
       );
     }
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: 300,
-      child: TextField(
-        controller: _controller,
-        focusNode: _focusNode,
-        autofocus: true,
-        decoration: InputDecoration(
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: _controller.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: _clear,
-                )
-              : null,
-          hintText: widget.hintText,
-          border: const OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(24)),
-          ),
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-        ),
-        textInputAction: TextInputAction.search,
-        onChanged: widget.onChanged,
-        onSubmitted: widget.onSubmitted,
-        onTapOutside: (_) {
-          if (_controller.text.isEmpty) {
-            _collapse();
-          }
-        },
-      ),
-    );
+    return _textField(autofocus: true, width: 300);
   }
 }
 
@@ -369,10 +438,15 @@ List<Widget> filterWidgetsBySearch(
 /// Build settings widgets from search results.
 ///
 /// Groups results by section and returns a list of section widgets.
+/// When [onResultSelected] is provided, each row becomes tappable and shows
+/// a section > title breadcrumb subtitle.
 List<Widget> buildSearchResultWidgets(
   List<SearchResult> results, {
   required Widget Function(SettingDefinition setting) tileBuilder,
   required String Function(String sectionKey) sectionTitleBuilder,
+  String Function(SettingDefinition setting)? settingTitleBuilder,
+  void Function(SearchResult result)? onResultSelected,
+  bool showBreadcrumbSubtitle = true,
 }) {
   if (results.isEmpty) return [];
 
@@ -386,12 +460,14 @@ List<Widget> buildSearchResultWidgets(
   // Build widgets
   final widgets = <Widget>[];
   for (final entry in grouped.entries) {
+    final sectionLabel =
+        entry.key.isNotEmpty ? sectionTitleBuilder(entry.key) : '';
     if (entry.key.isNotEmpty) {
       widgets.add(
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text(
-            sectionTitleBuilder(entry.key),
+            sectionLabel,
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 12,
@@ -402,7 +478,42 @@ List<Widget> buildSearchResultWidgets(
       );
     }
     for (final result in entry.value) {
-      widgets.add(tileBuilder(result.setting));
+      final tile = tileBuilder(result.setting);
+      if (onResultSelected == null) {
+        widgets.add(tile);
+        continue;
+      }
+
+      final title = settingTitleBuilder?.call(result.setting) ??
+          result.setting.titleKey;
+      final breadcrumb = sectionLabel.isEmpty
+          ? title
+          : '$sectionLabel › $title';
+      widgets.add(
+        Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: () => onResultSelected(result),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (showBreadcrumbSubtitle)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Text(
+                      breadcrumb,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                IgnorePointer(child: tile),
+              ],
+            ),
+          ),
+        ),
+      );
     }
   }
 

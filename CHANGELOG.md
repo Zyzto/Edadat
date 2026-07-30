@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-07-30
+
+### Added
+- **`ActionSetting`**: non-persisted settings for action/navigation rows that
+  remain searchable and jump-targetable.
+- **`SettingType.action`**: skipped by storage read/write.
+- **SearchIndex**: indexes section titles onto member settings; tracks
+  term→locale so `SearchResult.matchedLocale` is populated.
+- **`SettingsSearchBarMode`**: `persistent` (full-width) and `compact` (icon).
+- **`SettingAnchorRegistry` / `SettingAnchor` / `scrollToSetting`**: scroll-to
+  and temporary highlight for search result selection.
+- **`RegistrySettingsPage`**: persistent search under the app bar; result tap
+  expands section and scrolls/highlights the setting.
+- **`buildSearchResultWidgets`**: optional breadcrumb + `onResultSelected`.
+
+### Documentation
+- README: PreIndexedLocalizationProvider boot, ActionSetting, synonyms,
+  visible vs order for search exclusion.
+
 ## [0.2.0] - 2026-02-13
 
 ### Fixed
