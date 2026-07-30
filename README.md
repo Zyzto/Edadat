@@ -13,17 +13,17 @@ A state-management agnostic settings framework for Flutter apps with multi-langu
 
 ## Installation
 
-Add to your `pubspec.yaml`:
+Pin a **version tag** (see [VERSIONING.md](VERSIONING.md)):
 
 ```yaml
 dependencies:
   flutter_settings_framework:
     git:
       url: https://github.com/Zyzto/edadat.git
-      ref: main
-    # Or from pub.dev when published:
-    # flutter_settings_framework: ^1.0.0
+      ref: v0.5.0
 ```
+
+Current version: **0.5.0**.
 
 ## Quick Start
 

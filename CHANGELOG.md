@@ -2,71 +2,56 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.3.0] - 2026-07-30
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
+
+## [0.5.0] - 2026-07-30
+
+Baseline release under the new tag/CI system (`v0.5.0`).
 
 ### Added
 - **`ActionSetting`**: non-persisted settings for action/navigation rows that
   remain searchable and jump-targetable.
 - **`SettingType.action`**: skipped by storage read/write.
 - **SearchIndex**: indexes section titles onto member settings; tracks
-  term→locale so `SearchResult.matchedLocale` is populated.
+  term→locale so `SearchResult.matchedLocale` is populated; multi-word queries
+  require every distinct query word to match.
 - **`SettingsSearchBarMode`**: `persistent` (full-width) and `compact` (icon).
 - **`SettingAnchorRegistry` / `SettingAnchor` / `scrollToSetting`**: scroll-to
   and temporary highlight for search result selection.
 - **`RegistrySettingsPage`**: persistent search under the app bar; result tap
   expands section and scrolls/highlights the setting.
 - **`buildSearchResultWidgets`**: optional breadcrumb + `onResultSelected`.
+- **`PreIndexedLocalizationProvider`**: true bilingual search indexing.
+- Versioning docs, `scripts/check_version.sh`, `scripts/release.sh`.
+- GitHub Actions: CI (analyze + test) and Release (tag verify + GitHub Release).
+- Unit tests for SearchIndex and SettingsController.
 
 ### Documentation
-- README: PreIndexedLocalizationProvider boot, ActionSetting, synonyms,
-  visible vs order for search exclusion.
+- README: pin consumers to `ref: vX.Y.Z`; PreIndexed boot; ActionSetting;
+  synonyms; `visible` vs `order` for search exclusion.
+
+## [0.3.0] - 2026-07-30
+
+Pre-tag history (folded into 0.5.0 baseline).
+
+### Added
+- ActionSetting, bilingual search UX, persistent search, jump-to highlight.
 
 ## [0.2.0] - 2026-02-13
 
 ### Fixed
-- **Global change stream now fires for undo/import operations**:
-  `_notifyChangeUntyped` was silently skipping the global change stream,
-  causing `controller.changes` listeners to miss events from `undo()`,
-  `importAll()`, and `resetAll()`.
+- Global change stream now fires for undo/import operations.
 
 ### Improved
-- Removed `VoidCallback` typedef that shadowed Flutter's built-in
-  `VoidCallback`. The `addListener` method now returns `void Function()`
-  directly, avoiding potential import conflicts in consumer apps.
+- Removed `VoidCallback` typedef that shadowed Flutter's built-in type.
 
 ### Deprecated
-- `EasyLocalizationAdapter` in `search_index.dart` — use
-  `EasyLocalizationAdapterImpl` from the localization adapter instead.
-- `MapLocalizationProvider` in `search_index.dart` — use
-  `PreIndexedLocalizationProvider` from the localization adapter instead.
-- `createAutoDisposeSettingProvider` — delegates to `createSettingProvider`
-  with no actual auto-dispose behavior; use `createSettingProvider` directly.
-- `SettingsProviderFactory.createAutoDispose` — same reason; use `create`.
+- `EasyLocalizationAdapter` / `MapLocalizationProvider` stubs — use
+  `EasyLocalizationAdapterImpl` / `PreIndexedLocalizationProvider`.
+- Auto-dispose setting provider helpers — use `createSettingProvider`.
 
-### Documentation
-- Updated doc comments for `LocalizationProvider` to reference the correct
-  implementation classes.
-- Improved inline documentation throughout the codebase.
-
-## [0.1.0+1] - 2025-01-15
+## [0.1.0] - 2025-01-15
 
 ### Added
-- Initial release of flutter_settings_framework package
-- Declarative setting definitions with minimal boilerplate
-- Multi-language search across all supported locales
-- State management agnostic core with Riverpod adapter
-- Reusable UI components for settings pages
-- SharedPreferences storage implementation
-- Easy localization adapter for multi-language support
-- Responsive UI helpers for different screen sizes
-
-### Features
-- Setting types: String, Bool, Int, Double, Color, Enum, StringList
-- Settings registry for organizing settings
-- Settings controller with reactive streams
-- Search index with multi-language support
-- Pre-built UI tiles: Switch, Select, Slider, Color picker
-- Settings sections and subsections
-- Setting dependencies and conditional enabling
-- Value validation and formatting
-- Undo/redo support for setting changes
+- Initial release of flutter_settings_framework.
