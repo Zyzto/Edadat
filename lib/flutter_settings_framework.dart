@@ -1,5 +1,5 @@
-/// A state-management agnostic settings framework for Flutter apps
-/// with multi-language search support.
+/// Declarative settings for Flutter with bilingual search and a Riverpod
+/// adapter plus ready-made settings UI.
 ///
 /// ## Core concepts
 ///
@@ -12,10 +12,11 @@
 ///
 /// ## Riverpod integration
 ///
-/// Use [initializeSettings] and the [SettingsProviders] container to wire
-/// everything up with Riverpod. Extension methods on [WidgetRef] (e.g.
-/// `ref.watchSetting`, `ref.updateSetting`) provide convenient widget-level
-/// access.
+/// The package ships a Riverpod adapter and Riverpod-based UI
+/// (`flutter_riverpod` is a hard dependency). Use [initializeSettings] and
+/// the [SettingsProviders] container to wire everything up. Extension methods
+/// on [WidgetRef] (e.g. `ref.watchSetting`, `ref.updateSetting`) provide
+/// convenient widget-level access.
 ///
 /// See README.md for full documentation and usage examples.
 library;

@@ -1,50 +1,33 @@
 # Settings Framework Example
 
-This example demonstrates how to use the `flutter_settings_framework` package in a Flutter app.
+Package-style demo for `flutter_settings_framework` (definitions, Riverpod
+wiring, tiles, search). There are **no** generated platform folders in this
+tree, so `flutter run` is not available out of the box.
 
-## Running the Example
+## Analyze
 
 ```bash
 cd example
 flutter pub get
+dart analyze --fatal-infos
+```
+
+## Run (optional)
+
+Generate platforms first, then run:
+
+```bash
+cd example
+flutter create . --project-name settings_example
+flutter pub get
 flutter run
 ```
 
-## What the Example Shows
+## What it shows
 
-The example app demonstrates:
-
-1. **Setting Definitions**: How to define different types of settings (Bool, Enum, Color, Double)
-2. **Registry Creation**: How to create a settings registry with sections
-3. **Initialization**: How to initialize the framework with Riverpod
-4. **UI Components**: Using pre-built settings tiles
-5. **Search**: Multi-language search functionality
-6. **Reactive Updates**: Watching setting values with Riverpod
-
-## Features Demonstrated
-
-- ✅ Boolean settings with SwitchSettingsTile
-- ✅ Enum settings with SelectSettingsTile
-- ✅ Color settings with ColorSettingsTile
-- ✅ Double settings with SliderSettingsTile
-- ✅ Settings sections and organization
-- ✅ Search functionality
-- ✅ Reactive value watching
-- ✅ Setting value updates
-
-## UI Features
-
-The example app includes:
-- **Settings List**: Organized by sections
-- **Search Bar**: Search settings across all languages
-- **Setting Tiles**: Pre-built UI components for each setting type
-- **Current Values Display**: Shows all current setting values
-- **Theme Integration**: Settings affect app theme
-
-## Try It Out
-
-1. Run the app
-2. Toggle settings to see reactive updates
-3. Use the search bar to find settings
-4. Change theme mode, colors, and other settings
-5. Observe how settings persist across app restarts
+1. **Setting definitions** — Bool, Enum, Color, Double
+2. **Registry** — sections + settings
+3. **Initialization** — Riverpod overrides via `initializeSettings`
+4. **UI** — pre-built tiles and sections
+5. **Search** — multi-language terms
+6. **Reactive updates** — `ref.watchSetting` / updates

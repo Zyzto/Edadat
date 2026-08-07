@@ -1,8 +1,8 @@
 /// Flutter Settings Framework
-/// State-agnostic settings controller.
+/// Stream/callback-based settings controller.
 ///
 /// The controller manages setting values and provides streams for reactivity.
-/// It is designed to be wrapped by state management adapters.
+/// Apps typically wire it through the shipped Riverpod adapter.
 library;
 
 import 'dart:async';
@@ -36,7 +36,7 @@ class SettingChangeEvent<T> {
       'SettingChangeEvent(${setting.key}: $oldValue -> $newValue)';
 }
 
-/// State-agnostic controller for settings management.
+/// Stream/callback-based controller for settings management.
 ///
 /// The [SettingsController] is the core of the framework. It:
 /// - Manages setting values using [SettingsStorage]
@@ -44,9 +44,9 @@ class SettingChangeEvent<T> {
 /// - Validates values before saving
 /// - Emits change events for listeners
 ///
-/// This controller is state-management agnostic. Use adapters
-/// (like [RiverpodAdapter]) to integrate with your preferred
-/// state management solution.
+/// This controller is stream/callback-based and does not depend on Riverpod.
+/// The package ships a Riverpod adapter (`initializeSettings` /
+/// `SettingsProviders`) for app integration.
 ///
 /// Example:
 /// ```dart

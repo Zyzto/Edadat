@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.6.0] - 2026-08-07
+
+Packaging milestone (relicense + branding + first pub.dev publish path). No
+public API feature changes. See [VERSIONING.md](VERSIONING.md) for the
+milestone exception to the usual MINOR = features rule.
+
+### Changed
+- **License**: CC BY-NC-SA 4.0 → **MPL-2.0**.
+- **Branding**: Edadat / إعدادات logo, bilingual READMEs (`README.md`,
+  `README.ar.md`), pub-style install docs.
+- **Docs honesty**: market Riverpod adapter + UI as what ships today (no
+  Provider/Bloc adapters); clarify stream/callback core vs Riverpod UI.
+- **CI / release**: example `dart analyze` on CI; Release workflow publishes
+  to pub.dev via OIDC after verify + GitHub Release.
+
+### Fixed
+- Example README no longer claims `flutter run` without platform folders.
+- `example/pubspec.lock` synced to the package version.
+
 ## [0.5.1] - 2026-07-30
 
 ### Fixed

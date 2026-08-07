@@ -1,8 +1,10 @@
 name: flutter_settings_framework
-description: A state-management agnostic settings framework for Flutter apps with multi-language search support.
-version: 0.5.1
+description: Declarative Flutter settings with bilingual search, a Riverpod adapter, and ready-made settings UI.
+version: 0.6.0
 homepage: https://github.com/Zyzto/edadat
 repository: https://github.com/Zyzto/edadat
+issue_tracker: https://github.com/Zyzto/edadat/issues
+license: MPL-2.0
 
 environment:
   sdk: ^3.0.0

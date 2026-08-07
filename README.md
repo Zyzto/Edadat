@@ -1,40 +1,109 @@
-# Flutter Settings Framework
+<p align="center">
+  <img src="assets/edadat-logo.svg" alt="Edadat" width="220" />
+</p>
 
-A state-management agnostic settings framework for Flutter apps with multi-language search support.
+<h1 align="center">Edadat - إعدادات</h1>
 
-## Features
+<p align="center">
+  <strong>flutter_settings_framework</strong><br/>
+  Declarative settings for Flutter — bilingual search, Riverpod wiring,<br/>
+  and ready-made tiles / registry pages.
+</p>
 
-- **Declarative Settings**: Define settings in ~5 lines instead of ~25
-- **Multi-Language Search**: Search settings in any language, not just the displayed one
-- **State Management Agnostic**: Core uses streams/callbacks, adapters for Riverpod/Provider/Bloc
-- **Responsive UI Components**: Pre-built tiles for switches, sliders, colors, selections
-- **easy_localization Support**: Built-in integration with easy_localization package
-- **Minimal Boilerplate**: Register once, use everywhere
+<p align="center">
+  <a href="https://pub.dev/packages/flutter_settings_framework"><img alt="pub.dev" src="https://img.shields.io/pub/v/flutter_settings_framework.svg?style=flat-square&label=pub.dev&color=8B6914" /></a>
+  <a href="https://github.com/Zyzto/Edadat"><img alt="repo" src="https://img.shields.io/badge/github-Zyzto%2FEdadat-C0C0C0?style=flat-square" /></a>
+  <img alt="flutter" src="https://img.shields.io/badge/Flutter-%3E%3D3.0-C0C0C0?style=flat-square&logo=flutter&logoColor=white" />
+  <img alt="license" src="https://img.shields.io/badge/license-MPL--2.0-8B6914?style=flat-square" />
+</p>
 
-## Installation
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#features-at-a-glance">Features</a> ·
+  <a href="#setting-types">Types</a> ·
+  <a href="#example">Example</a> ·
+  <a href="README.ar.md">العربية</a>
+</p>
 
-Pin a **version tag** (see [VERSIONING.md](VERSIONING.md)):
+<p align="center">
+  The name <strong>edadat</strong> comes from Arabic
+  <span dir="rtl"><strong>إعدادات</strong></span>
+  (<em>iʿdādāt</em>): settings / configurations —
+  plural of <span dir="rtl"><em>إعداد</em></span> (<em>iʿdād</em>).
+</p>
+
+---
+
+## Why
+
+Most Flutter apps grow a pile of preference notifiers, keys, and one-off tiles. Then you need:
+
+- declarative definitions instead of per-setting boilerplate
+- search that works in more than the current UI language
+- a consistent settings page without rebuilding every screen
+
+**Edadat** covers that path with a stream/callback core, a **shipped Riverpod adapter + UI**, and bilingual search indexing. Other state-management adapters are not included today (`flutter_riverpod` is a hard dependency).
+
+On pub.dev: [`flutter_settings_framework`](https://pub.dev/packages/flutter_settings_framework) · Repo: [Zyzto/Edadat](https://github.com/Zyzto/Edadat)
+
+---
+
+## Features at a glance
+
+| Area | What you get |
+|------|----------------|
+| **Definitions** | Typed settings (`Bool`, `Enum`, `Color`, …) in a few lines |
+| **Search** | Multi-language index via `PreIndexedLocalizationProvider` + synonyms |
+| **Riverpod** | `initializeSettings`, `SettingsProviders`, `ref.watchSetting` / `updateSetting` |
+| **UI** | Tiles, sections, persistent/compact search, `RegistrySettingsPage` |
+| **Jump-to** | `SettingAnchorRegistry` scroll + highlight after search |
+| **Storage** | `SharedPreferencesStorage`, or your own `SettingsStorage` |
+| **Actions** | Non-persisted `ActionSetting` rows that stay searchable |
+
+**Core:** stream/callback controller (no Riverpod import). **Shipped integration:** Riverpod adapter + Riverpod-based settings UI.
+
+---
+
+## Install
+
+```yaml
+dependencies:
+  flutter_settings_framework: ^0.6.0
+```
+
+Or:
+
+```bash
+flutter pub add flutter_settings_framework
+```
+
+Git tag pin (see [VERSIONING.md](VERSIONING.md)):
 
 ```yaml
 dependencies:
   flutter_settings_framework:
     git:
       url: https://github.com/Zyzto/edadat.git
-      ref: v0.5.1
+      ref: v0.6.0
 ```
 
-Current version: **0.5.1**.
+```dart
+import 'package:flutter_settings_framework/flutter_settings_framework.dart';
+```
 
-## Quick Start
+Current version: **0.6.0**.
 
-### 1. Define Your Settings
+---
+
+## Quick start
+
+### 1. Define settings
 
 ```dart
-// settings_definitions.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_settings_framework/flutter_settings_framework.dart';
 
-// Define sections
 const generalSection = SettingSection(
   key: 'general',
   titleKey: 'general',
@@ -42,7 +111,6 @@ const generalSection = SettingSection(
   order: 0,
 );
 
-// Define settings
 const themeModeSetting = EnumSetting(
   'theme_mode',
   defaultValue: 'system',
@@ -63,7 +131,6 @@ const notificationsSetting = BoolSetting(
   section: 'general',
 );
 
-// Create registry
 SettingsRegistry createMyRegistry() {
   return SettingsRegistry.withSettings(
     sections: [generalSection],
@@ -72,16 +139,12 @@ SettingsRegistry createMyRegistry() {
 }
 ```
 
-### 2. Initialize in main.dart
-
-Override all three providers so that `ref.settings`, `ref.watchSetting(setting)`, and `settingsSearchResultsProvider(query)` work:
+### 2. Initialize (override all three providers)
 
 ```dart
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load translation maps for true bilingual search (all locales at once).
-  // EasyLocalizationAdapterImpl only indexes the *current* UI locale.
   final en = Map<String, String>.from(
     jsonDecode(await rootBundle.loadString('assets/translations/en.json')) as Map,
   );
@@ -105,44 +168,33 @@ Future<void> main() async {
         settingsSearchIndexProvider.overrideWithValue(settings.searchIndex),
         settingsProvidersProvider.overrideWithValue(settings),
       ],
-      child: MyApp(),
+      child: const MyApp(),
     ),
   );
 }
 ```
 
-### 3. Use in Widgets
-
-With the overrides above you can use the ref extension:
+### 3. Use in widgets
 
 ```dart
 class MyWidget extends ConsumerWidget {
+  const MyWidget({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // ref.settings gives you the SettingsProviders container
-    final theme = ref.watchSetting(themeModeSetting);
-    // Or when you already have a SettingsProviders instance:
-    final theme2 = ref.watchSettingWith(settings, themeModeSetting);
-    
-    return Scaffold(
-      body: ListView(
-        children: [
-          SwitchSettingsTile.fromSetting(
-            setting: notificationsSetting,
-            title: 'notifications'.tr(),
-            value: ref.watchSetting(notificationsSetting),
-            onChanged: (value) => ref.updateSetting(notificationsSetting, value),
-          ),
-        ],
-      ),
+    final enabled = ref.watchSetting(notificationsSetting);
+
+    return SwitchSettingsTile.fromSetting(
+      setting: notificationsSetting,
+      title: 'notifications'.tr(),
+      value: enabled,
+      onChanged: (value) => ref.updateSetting(notificationsSetting, value),
     );
   }
 }
 ```
 
-### 4. Convention-based settings page
-
-Use `RegistrySettingsPage` to build a full settings UI from your registry (sections, tiles by type, search, split layout on landscape). Pass `sectionTitleBuilder` (e.g. `(key) => key.tr()`) and optionally `sectionContentBuilder` for custom sections (Tags, About, etc.):
+### 4. Registry page
 
 ```dart
 RegistrySettingsPage(
@@ -152,16 +204,14 @@ RegistrySettingsPage(
   searchHint: 'search_settings'.tr(),
   sectionTitleBuilder: (key) => key.tr(),
   enumLabelBuilder: (key) => key.tr(),
-  sectionContentBuilder: (sectionKey, defaultChildren) {
-    if (sectionKey == 'about') return [AboutSectionContent()];
-    return defaultChildren;
-  },
 )
 ```
 
-Search results use the built-in provider: `ref.watch(settingsSearchResultsProvider(query))`.
+Search results: `ref.watch(settingsSearchResultsProvider(query))`.
 
-## Setting Types
+---
+
+## Setting types
 
 | Type | Class | Example |
 |------|-------|---------|
@@ -172,17 +222,15 @@ Search results use the built-in provider: `ref.watch(settingsSearchResultsProvid
 | Color | `ColorSetting` | Theme colors |
 | Enum | `EnumSetting` | Limited options |
 | String List | `StringListSetting` | Tags, filters |
-| Action | `ActionSetting` | Export, about, privacy (non-persisted search/jump targets) |
+| Action | `ActionSetting` | Export, about (non-persisted) |
 
-## Multi-Language Search
+---
 
-The framework supports searching settings in any language. Pass
-`PreIndexedLocalizationProvider` at `initializeSettings` so titles, subtitles,
-and **section titles** are indexed for every locale. Add `searchTerms` for
-synonyms users type that are not in the label:
+## Multi-language search
+
+Pass `PreIndexedLocalizationProvider` at `initializeSettings` so titles, subtitles, and section titles are indexed for every locale. Add `searchTerms` for synonyms:
 
 ```dart
-// Synonyms (optional; titles are indexed via PreIndexedLocalizationProvider)
 const languageSetting = EnumSetting(
   'language',
   defaultValue: 'en',
@@ -194,85 +242,22 @@ const languageSetting = EnumSetting(
   },
 );
 
-// Non-persisted rows (export, about, …) — still searchable:
-const exportAction = ActionSetting(
-  'action_export',
-  titleKey: 'export_data',
-  section: 'data',
-  icon: Icons.upload,
-  searchTerms: {
-    'en': ['backup', 'download'],
-    'ar': ['تصدير'],
-  },
-);
-
-// Search works in any language regardless of UI locale
-final results = searchIndex.search('عربي'); // Finds language setting
-final results2 = searchIndex.search('arabic'); // Also finds it
+final results = searchIndex.search('عربي');
 ```
 
-Set `visible: false` on internal settings so they never appear in search results
-(`order` alone does not hide them from [SearchIndex]).
+Set `visible: false` on internal settings so they never appear in search (`order` alone does not hide them from `SearchIndex`).
 
-## UI Components
+---
 
-### Tiles
-- `SettingsTile` - Basic tile
-- `SwitchSettingsTile` - Boolean toggle
-- `SelectSettingsTile<T>` - Dialog picker
-- `SliderSettingsTile` - Numeric slider
-- `ColorSettingsTile` - Color picker
-- `NavigationSettingsTile` - Links to screens
-- `ActionSettingsTile` - Trigger actions
-- `InfoSettingsTile` - Read-only info
+## UI inventory
 
-### Layout
-- `SettingsSectionWidget` - Collapsible section
-- `SettingsSubsectionHeader` - Section dividers
-- `SettingsSearchBar` - `SettingsSearchBarMode.persistent` (full-width) or `.compact` (icon expand)
-- `SettingAnchorRegistry` / `SettingAnchor` / `scrollToSetting` - jump-to + highlight after search
-- `SplitScreenLayout` - List/detail for tablets
-- `RegistrySettingsPage` - Full settings page from registry (persistent search, sections, default tiles by type, landscape split, result tap → scroll/highlight). Use `sectionContentBuilder` for custom sections (e.g. About, Data).
-- `CardSettingsSection` - Card-style collapsible section with optional landscape selection
+**Tiles:** `SettingsTile`, `SwitchSettingsTile`, `SelectSettingsTile`, `SliderSettingsTile`, `ColorSettingsTile`, `NavigationSettingsTile`, `ActionSettingsTile`, `InfoSettingsTile`
 
-### Helpers
-- `ref.settings` - Access [SettingsProviders] when [settingsProvidersProvider] is overridden
-- `ref.watchSetting(setting)` / `ref.readSetting(setting)` / `ref.updateSetting(setting, value)` / `ref.resetSetting(setting)` - Convenience methods using `ref.settings`
-- `settingsSearchResultsProvider(query)` - Built-in family provider for search results
-- `buildSearchResultWidgets` - Grouped results with optional breadcrumb + `onResultSelected`
-- `isSettingEnabled(settings, setting, ref)` - Whether a setting is enabled (respects `dependsOn` / `enabledWhen`)
+**Layout:** `SettingsSectionWidget`, `SettingsSearchBar` (`persistent` / `compact`), `SettingAnchorRegistry` / `scrollToSetting`, `SplitScreenLayout`, `RegistrySettingsPage`, `CardSettingsSection`
 
-### Dialogs
-- `SettingsDialog.show()` - Generic dialog
-- `SettingsDialog.confirm()` - Confirmation
-- `SettingsDialog.select()` - Selection picker
-- `SettingsDialog.slider()` - Slider input
-- `SettingsDialog.colorPicker()` - Color picker
+**Helpers:** `ref.settings`, `ref.watchSetting` / `updateSetting` / `resetSetting`, `settingsSearchResultsProvider`, `buildSearchResultWidgets`, `isSettingEnabled`
 
-## Responsive Design
-
-```dart
-// Check screen size
-if (ResponsiveLayout.isPhone(context)) { ... }
-if (ResponsiveLayout.isTablet(context)) { ... }
-if (ResponsiveLayout.isDesktop(context)) { ... }
-
-// Adaptive values
-final padding = ResponsiveLayout.value(
-  context,
-  phone: 16.0,
-  tablet: 24.0,
-  desktop: 32.0,
-);
-
-// Split-screen for tablets
-if (ResponsiveLayout.shouldUseSplitScreen(context)) {
-  return SplitScreenLayout(
-    listPane: SettingsList(),
-    detailPane: SettingDetail(),
-  );
-}
-```
+---
 
 ## Architecture
 
@@ -282,72 +267,48 @@ if (ResponsiveLayout.shouldUseSplitScreen(context)) {
 └─────────────────────────────┬───────────────────────────────┘
                               │
 ┌─────────────────────────────▼───────────────────────────────┐
-│                    Riverpod Adapter                         │
-│   • SettingNotifier<T>                                      │
-│   • SettingsProviders                                       │
-│   • Provider helpers                                        │
+│              Riverpod adapter + settings UI                 │
+│   • SettingNotifier<T> / SettingsProviders                  │
+│   • RegistrySettingsPage, tiles (Riverpod-coupled)          │
 └─────────────────────────────┬───────────────────────────────┘
                               │
 ┌─────────────────────────────▼───────────────────────────────┐
-│                  Core (State Agnostic)                      │
-│   • SettingsController (streams, callbacks)                 │
-│   • SettingsRegistry (definitions)                          │
-│   • SearchIndex (multi-language)                            │
-│   • SettingsStorage (abstraction)                           │
+│           Core (streams / callbacks, no Riverpod)           │
+│   • SettingsController · SettingsRegistry · SearchIndex     │
+│   • SettingsStorage abstraction                             │
 └─────────────────────────────┬───────────────────────────────┘
                               │
 ┌─────────────────────────────▼───────────────────────────────┐
-│                  Storage Implementation                     │
-│   • SharedPreferencesStorage                                │
-│   • MemoryStorage (testing)                                 │
-│   • Custom implementations                                  │
+│   SharedPreferencesStorage · MemoryStorage · custom         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Comparison: Before vs After
+---
 
-### Before (~25 lines per setting)
+## Example
 
-```dart
-class ThemeModeNotifier {
-  String _mode;
-  ThemeModeNotifier() : _mode = PreferencesService.getThemeMode() ?? 'system';
-  String get mode => _mode;
-  Future<void> setThemeMode(String mode) async {
-    _mode = mode;
-    await PreferencesService.setThemeMode(mode);
-  }
-}
+See [`example/`](example/) for definitions, init, and tiles. The example is package-style (no platform folders); analyze with:
 
-final themeModeNotifierProvider = Provider<ThemeModeNotifier>((ref) {
-  return ThemeModeNotifier();
-});
-
-final themeModeProvider = Provider<String>((ref) {
-  return ref.watch(themeModeNotifierProvider).mode;
-});
+```bash
+cd example && flutter pub get && dart analyze --fatal-infos
 ```
 
-### After (~5 lines per setting)
+To run it, generate platforms first (`flutter create .` inside `example/`). Details: [example/README.md](example/README.md).
 
-```dart
-const themeModeSetting = EnumSetting(
-  'theme_mode',
-  defaultValue: 'system',
-  titleKey: 'theme',
-  options: ['system', 'light', 'dark'],
-);
+---
 
-// Usage
-final theme = ref.watch(settings.provider(themeModeSetting));
-ref.read(settings.provider(themeModeSetting).notifier).set('dark');
-```
+## Branding
 
-## Migration Guide
+The logo wordmark uses **[Baz](https://www.1001fonts.com/baz-font.html)** (Baz Light) — the same Arabic typeface as [Siglat](https://github.com/Zyzto/Siglat). The face is vendored at [`assets/fonts/baz-Light.otf`](assets/fonts/baz-Light.otf); the SVG outlines the glyphs so GitHub/pub.dev render without loading the font.
 
-1. Create setting definitions for all settings
-2. Initialize the framework in main.dart
-3. Replace individual provider usage with `settings.provider(settingDef)`
-4. Update UI to use framework tiles
-5. Remove old notifier classes and providers
+---
 
+## Versioning
+
+See [VERSIONING.md](VERSIONING.md) and [CHANGELOG.md](CHANGELOG.md). Tags are `vX.Y.Z` and must match `pubspec.yaml`.
+
+---
+
+## License
+
+[MPL-2.0](LICENSE) — weak copyleft, commercial use allowed. Modified package files stay under MPL; your app can remain closed-source.
