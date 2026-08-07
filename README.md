@@ -23,7 +23,8 @@
   <a href="#features-at-a-glance">Features</a> ·
   <a href="#setting-types">Types</a> ·
   <a href="#example">Example</a> ·
-  <a href="README.ar.md">العربية</a>
+  <a href="README.ar.md">العربية</a> ·
+  <a href="docs/i18n-ar.md">Arabic UI style</a>
 </p>
 
 <p align="center">
@@ -228,7 +229,9 @@ Search results: `ref.watch(settingsSearchResultsProvider(query))`.
 
 ## Multi-language search
 
-Pass `PreIndexedLocalizationProvider` at `initializeSettings` so titles, subtitles, and section titles are indexed for every locale. Add `searchTerms` for synonyms:
+Pass `PreIndexedLocalizationProvider` at `initializeSettings` so titles, subtitles, and section titles are indexed for every locale. Add `searchTerms` for synonyms.
+
+For Arabic UI wording (MSA tone, anti-calque habits, and a shared glossary), see [Arabic UI localization style guide](docs/i18n-ar.md).
 
 ```dart
 const languageSetting = EnumSetting(

@@ -26,7 +26,8 @@
   <a href="#أنواع-الإعدادات">Types</a> ·
   <a href="#المثال">Example</a>
   <br/>
-  <a href="README.md"><span dir="ltr">English</span></a>
+  <a href="README.md"><span dir="ltr">English</span></a> ·
+  <a href="docs/i18n-ar.md">دليل أسلوب العربية</a>
 </p>
 
 <p align="center">
@@ -283,7 +284,9 @@ RegistrySettingsPage(
 
 ## بحث متعدد اللغات
 
-مرّر <span dir="ltr"><code>PreIndexedLocalizationProvider</code></span> عند <span dir="ltr"><code>initializeSettings</code></span> حتى تُفهرَس titles وsubtitles وsection titles لكل locale. أضف <span dir="ltr"><code>searchTerms</code></span> للمرادفات:
+مرّر <span dir="ltr"><code>PreIndexedLocalizationProvider</code></span> عند <span dir="ltr"><code>initializeSettings</code></span> حتى تُفهرَس titles وsubtitles وsection titles لكل locale. أضف <span dir="ltr"><code>searchTerms</code></span> للمرادفات.
+
+لصياغة واجهة عربية (أسلوب فصحى، تجنّب الترجمة الحرفية، ومسرد مشترك)، انظر <a href="docs/i18n-ar.md">دليل أسلوب تعريب الواجهة</a>.
 
 </div>
 
