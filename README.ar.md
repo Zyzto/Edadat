@@ -22,9 +22,11 @@
 <p align="center">
   <a href="#التثبيت">Install</a> ·
   <a href="#ابدأ-في-دقائق">Quick start</a> ·
+  <a href="#لقطات">Screenshots</a> ·
   <a href="#ماذا-تقدّم">Features</a> ·
   <a href="#أنواع-الإعدادات">Types</a> ·
-  <a href="#المثال">Example</a>
+  <a href="#المثال">Example</a> ·
+  <a href="https://zyzto.github.io/Edadat/">المثال الحي</a>
   <br/>
   <a href="README.md"><span dir="ltr">English</span></a> ·
   <a href="docs/i18n-ar.md">دليل أسلوب العربية</a>
@@ -54,6 +56,45 @@
 **إعدادات** تغطي ذلك عبر core من نوع stream/callback، و**Riverpod adapter + UI مشحونان**، وفهرسة بحث bilingual. adapters أخرى لـ state management غير مشمولة اليوم (<span dir="ltr"><code>flutter_riverpod</code></span> اعتماد صلب).
 
 على <span dir="ltr">pub.dev</span>: <span dir="ltr"><a href="https://pub.dev/packages/flutter_settings_framework"><code>flutter_settings_framework</code></a></span> · المستودع: <span dir="ltr"><a href="https://github.com/Zyzto/Edadat">Zyzto/Edadat</a></span>
+
+</div>
+
+---
+
+<div dir="rtl" lang="ar">
+
+## لقطات
+
+</div>
+
+<p align="center">
+  <img src="screenshots/settings-ar.png" alt="كتالوج الإعدادات (العربية)" width="180" />
+  <img src="screenshots/settings-en.png" alt="كتالوج الإعدادات (الإنجليزية)" width="180" />
+  <img src="screenshots/search-ar.png" alt="بحث مظهر" width="180" />
+</p>
+
+<p align="center">
+  <sub>العربية · الإنجليزية · بحث bilingual</sub>
+</p>
+
+<details>
+<summary>السمة الداكنة</summary>
+
+<p align="center">
+  <img src="screenshots/settings-ar-dark.png" alt="كتالوج الإعدادات الداكن (العربية)" width="140" />
+  <img src="screenshots/settings-en-dark.png" alt="كتالوج الإعدادات الداكن (الإنجليزية)" width="140" />
+  <img src="screenshots/search-en.png" alt="بحث theme" width="140" />
+</p>
+
+<p align="center">
+  <sub>عربي داكن · إنجليزي داكن · بحث إنجليزي</sub>
+</p>
+
+</details>
+
+<div dir="rtl" lang="ar">
+
+مُلتقطة من كتالوج <span dir="ltr"><a href="example/"><code>example/</code></a></span> عبر <span dir="ltr"><code>flutter test test/screenshots_test.dart</code></span>.
 
 </div>
 
@@ -361,7 +402,11 @@ final results = searchIndex.search('عربي');
 
 ## المثال
 
-انظر <span dir="ltr"><a href="example/"><code>example/</code></a></span> للتعريفات والـ init والـ tiles. المثال بأسلوب package (بدون مجلدات platforms)؛ حلّل بـ:
+انظر <span dir="ltr"><a href="example/"><code>example/</code></a></span> لكتالوج bilingual على <span dir="ltr"><code>RegistrySettingsPage</code></span>: Bool و Enum و Color و Double و Int و String و StringList و Action و <span dir="ltr"><code>dependsOn</code></span> وبحث إنجليزي/عربي.
+
+المثال على الويب: <span dir="ltr"><a href="https://zyzto.github.io/Edadat/">zyzto.github.io/Edadat</a></span>
+
+المثال بأسلوب package (web فقط في المستودع)؛ حلّل بـ:
 
 </div>
 
@@ -371,7 +416,7 @@ cd example && flutter pub get && dart analyze --fatal-infos
 
 <div dir="rtl" lang="ar">
 
-للتشغيل، ولّد الـ platforms أولاً (<span dir="ltr"><code>flutter create .</code></span> داخل <span dir="ltr"><code>example/</code></span>). التفاصيل: <span dir="ltr"><a href="example/README.md">example/README.md</a></span>.
+للتشغيل على جهاز، ولّد platforms الأخرى أولاً (<span dir="ltr"><code>flutter create . --platforms=android,ios</code></span> داخل <span dir="ltr"><code>example/</code></span>). التفاصيل: <span dir="ltr"><a href="example/README.md">example/README.md</a></span>.
 
 </div>
 

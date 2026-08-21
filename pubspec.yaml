@@ -5,6 +5,15 @@ homepage: https://github.com/Zyzto/edadat
 repository: https://github.com/Zyzto/edadat
 issue_tracker: https://github.com/Zyzto/edadat/issues
 license: MPL-2.0
+screenshots:
+  - description: Settings catalog in English
+    path: screenshots/settings-en.png
+  - description: Settings catalog in Arabic (RTL)
+    path: screenshots/settings-ar.png
+  - description: Bilingual search for theme
+    path: screenshots/search-en.png
+  - description: Dark theme settings catalog
+    path: screenshots/settings-en-dark.png
 
 environment:
   sdk: ^3.0.0

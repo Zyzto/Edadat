@@ -20,9 +20,11 @@
 <p align="center">
   <a href="#install">Install</a> ·
   <a href="#quick-start">Quick start</a> ·
+  <a href="#screenshots">Screenshots</a> ·
   <a href="#features-at-a-glance">Features</a> ·
   <a href="#setting-types">Types</a> ·
   <a href="#example">Example</a> ·
+  <a href="https://zyzto.github.io/Edadat/">Live demo</a> ·
   <a href="README.ar.md">العربية</a> ·
   <a href="docs/i18n-ar.md">Arabic UI style</a>
 </p>
@@ -47,6 +49,37 @@ Most Flutter apps grow a pile of preference notifiers, keys, and one-off tiles. 
 **Edadat** covers that path with a stream/callback core, a **shipped Riverpod adapter + UI**, and bilingual search indexing. Other state-management adapters are not included today (`flutter_riverpod` is a hard dependency).
 
 On pub.dev: [`flutter_settings_framework`](https://pub.dev/packages/flutter_settings_framework) · Repo: [Zyzto/Edadat](https://github.com/Zyzto/Edadat)
+
+---
+
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/settings-en.png" alt="Settings catalog (English)" width="180" />
+  <img src="screenshots/settings-ar.png" alt="Settings catalog (Arabic)" width="180" />
+  <img src="screenshots/search-en.png" alt="Search for theme" width="180" />
+</p>
+
+<p align="center">
+  <sub>English catalog · Arabic RTL · Bilingual search</sub>
+</p>
+
+<details>
+<summary>Dark theme</summary>
+
+<p align="center">
+  <img src="screenshots/settings-en-dark.png" alt="Settings catalog, dark (English)" width="140" />
+  <img src="screenshots/settings-ar-dark.png" alt="Settings catalog, dark (Arabic)" width="140" />
+  <img src="screenshots/search-ar.png" alt="Search for مظهر" width="140" />
+</p>
+
+<p align="center">
+  <sub>English dark · Arabic dark · Arabic search</sub>
+</p>
+
+</details>
+
+Rendered from the [`example/`](example/) catalog (`flutter test test/screenshots_test.dart`).
 
 ---
 
@@ -290,13 +323,17 @@ Set `visible: false` on internal settings so they never appear in search (`order
 
 ## Example
 
-See [`example/`](example/) for definitions, init, and tiles. The example is package-style (no platform folders); analyze with:
+See [`example/`](example/) for a bilingual `RegistrySettingsPage` catalog: Bool, Enum, Color, Double, Int, String, StringList, Action, `dependsOn`, and EN/AR search.
+
+Live web build: [zyzto.github.io/Edadat](https://zyzto.github.io/Edadat/)
+
+The example is package-style (web only in-tree); analyze with:
 
 ```bash
 cd example && flutter pub get && dart analyze --fatal-infos
 ```
 
-To run it, generate platforms first (`flutter create .` inside `example/`). Details: [example/README.md](example/README.md).
+To run on a device, generate the other platforms (`flutter create . --platforms=android,ios` inside `example/`). Details: [example/README.md](example/README.md).
 
 ---
 
