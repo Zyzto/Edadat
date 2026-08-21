@@ -8,6 +8,8 @@ import 'package:flutter_settings_framework/flutter_settings_framework.dart';
 
 import 'catalog.dart';
 
+enum ExamplePreviewLayout { mobile, desktop }
+
 class ExampleApp extends ConsumerWidget {
   const ExampleApp({super.key});
 
@@ -60,20 +62,31 @@ class ExampleApp extends ConsumerWidget {
   }
 }
 
-class ExampleSettingsPage extends ConsumerWidget {
+class ExampleSettingsPage extends ConsumerStatefulWidget {
   const ExampleSettingsPage({super.key, required this.localeCode});
 
   final String localeCode;
 
-  String t(String key) => translateExample(key, localeCode);
+  @override
+  ConsumerState<ExampleSettingsPage> createState() =>
+      _ExampleSettingsPageState();
+}
+
+class _ExampleSettingsPageState extends ConsumerState<ExampleSettingsPage> {
+  ExamplePreviewLayout _layout = ExamplePreviewLayout.mobile;
+
+  String t(String key) => translateExample(key, widget.localeCode);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvidersProvider);
     final registry = settings.registry;
     final tags = ref.watchSetting(tagsSetting);
+    final isMobile = _layout == ExamplePreviewLayout.mobile;
+    final host = MediaQuery.sizeOf(context);
 
-    return RegistrySettingsPage(
+    final page = RegistrySettingsPage(
+      splitLayout: !isMobile,
       registry: registry,
       settings: settings,
       title: t('app_title'),
@@ -140,6 +153,31 @@ class ExampleSettingsPage extends ConsumerWidget {
           ),
         ];
       },
+      actions: [
+        IconButton(
+          key: const ValueKey('layout_toggle'),
+          tooltip: isMobile ? t('layout_desktop') : t('layout_mobile'),
+          icon: Icon(isMobile ? Icons.desktop_windows_outlined : Icons.smartphone),
+          onPressed: () {
+            setState(() {
+              _layout = isMobile
+                  ? ExamplePreviewLayout.desktop
+                  : ExamplePreviewLayout.mobile;
+            });
+          },
+        ),
+      ],
+    );
+
+    if (!isMobile || host.width <= 420) return page;
+
+    return ColoredBox(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: FittedBox(
+          child: _PhoneFrame(child: page),
+        ),
+      ),
     );
   }
 
@@ -195,5 +233,39 @@ class ExampleSettingsPage extends ConsumerWidget {
         SnackBar(content: Text(t('reset_done'))),
       );
     }
+  }
+}
+
+class _PhoneFrame extends StatelessWidget {
+  const _PhoneFrame({required this.child});
+
+  static const size = Size(390, 844);
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: size.width,
+      height: size.height,
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: scheme.outline, width: 8),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.shadow.withValues(alpha: 0.24),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: MediaQuery(
+        data: MediaQuery.of(context).copyWith(size: size),
+        child: child,
+      ),
+    );
   }
 }

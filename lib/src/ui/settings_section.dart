@@ -285,14 +285,18 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
 
   Widget _textField({required bool autofocus, double? width}) {
     final field = TextField(
+      key: const ValueKey('settings_search_field'),
       controller: _controller,
       focusNode: _focusNode,
       autofocus: autofocus,
       decoration: _decoration(),
       textInputAction: TextInputAction.search,
+      autocorrect: false,
+      enableSuggestions: false,
       onChanged: widget.onChanged,
       onSubmitted: widget.onSubmitted,
       onTapOutside: (_) {
+        _focusNode.unfocus();
         if (widget.mode == SettingsSearchBarMode.compact &&
             _controller.text.isEmpty) {
           _collapse();

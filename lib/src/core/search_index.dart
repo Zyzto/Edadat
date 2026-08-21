@@ -289,8 +289,7 @@ class SearchIndex {
       } else if (term.contains(word)) {
         // Contains match - lower score
         score = 4.0 * (word.length / term.length);
-      } else if (word.length >= 3 && _fuzzyMatch(word, term)) {
-        // Fuzzy match for longer queries
+      } else if (_fuzzyMatch(word, term)) {
         score = 2.0;
       }
 
@@ -308,16 +307,41 @@ class SearchIndex {
     }
   }
 
-  /// Simple fuzzy matching using Levenshtein distance threshold.
+  /// Latin-only typo tolerance. Short or non-Latin queries (e.g. Arabic)
+  /// must match exactly, as a prefix, or as a substring.
   bool _fuzzyMatch(String query, String term) {
-    if ((query.length - term.length).abs() > 3) return false;
+    if (query.length < 4) return false;
+    if (!_isLatinAlphabet(query) || !_isLatinAlphabet(term)) return false;
+    if ((query.length - term.length).abs() > 1) return false;
+    return _levenshtein(query, term) <= 1;
+  }
 
-    // Simple character overlap check
-    int matches = 0;
-    for (final char in query.split('')) {
-      if (term.contains(char)) matches++;
+  static final _latin = RegExp(r'^[a-z]+$');
+
+  static bool _isLatinAlphabet(String value) => _latin.hasMatch(value);
+
+  static int _levenshtein(String a, String b) {
+    if (a == b) return 0;
+    if (a.isEmpty) return b.length;
+    if (b.isEmpty) return a.length;
+    final prev = List<int>.generate(b.length + 1, (i) => i);
+    final curr = List<int>.filled(b.length + 1, 0);
+    for (var i = 0; i < a.length; i++) {
+      curr[0] = i + 1;
+      for (var j = 0; j < b.length; j++) {
+        final cost = a.codeUnitAt(i) == b.codeUnitAt(j) ? 0 : 1;
+        final insert = curr[j] + 1;
+        final delete = prev[j + 1] + 1;
+        final replace = prev[j] + cost;
+        curr[j + 1] = insert < delete
+            ? (insert < replace ? insert : replace)
+            : (delete < replace ? delete : replace);
+      }
+      for (var j = 0; j <= b.length; j++) {
+        prev[j] = curr[j];
+      }
     }
-    return matches / query.length >= 0.7;
+    return prev[b.length];
   }
 
   /// Get all indexed terms for a setting.

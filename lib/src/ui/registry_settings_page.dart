@@ -74,6 +74,13 @@ class RegistrySettingsPage extends ConsumerStatefulWidget {
   /// Empty-results message. Receives the query.
   final String Function(String query)? emptySearchMessageBuilder;
 
+  /// Extra [AppBar] actions (e.g. a layout toggle in the example).
+  final List<Widget>? actions;
+
+  /// When null, uses a split list/detail pane if width > height.
+  /// Set to `true`/`false` to force desktop or stacked (mobile) layout.
+  final bool? splitLayout;
+
   const RegistrySettingsPage({
     super.key,
     required this.registry,
@@ -89,6 +96,8 @@ class RegistrySettingsPage extends ConsumerStatefulWidget {
     this.onSectionExpansionChanged,
     this.searchResultFilter,
     this.emptySearchMessageBuilder,
+    this.actions,
+    this.splitLayout,
   });
 
   static String _defaultSectionTitleBuilder(String key) => key;
@@ -125,9 +134,23 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
     super.dispose();
   }
 
+  bool _useSplitLayout(BuildContext context) {
+    if (widget.splitLayout != null) return widget.splitLayout!;
+    final size = MediaQuery.sizeOf(context);
+    return size.width > size.height;
+  }
+
   void _onSearchChanged() {
     final query = _searchController.text.trim();
-    if (query != _searchQuery) setState(() => _searchQuery = query);
+    if (query == _searchQuery) return;
+    setState(() {
+      _searchQuery = query;
+      if (query.isNotEmpty) {
+        _selectedSectionId = null;
+        _detailContent = null;
+        _detailTitle = null;
+      }
+    });
   }
 
   bool _isSectionExpanded(SettingSection section) {
@@ -147,15 +170,32 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
   Future<void> _onResultSelected(SearchResult result) async {
     final setting = result.setting;
     final sectionKey = setting.section;
+    final section =
+        sectionKey != null ? widget.registry.getSection(sectionKey) : null;
+    final useSplit = _useSplitLayout(context);
+    final children = sectionKey != null
+        ? _sectionChildren(widget.settings, sectionKey)
+        : const <Widget>[];
+
     setState(() {
-      _searchController.clear();
       _searchQuery = '';
       _pendingScrollKey = setting.key;
       if (sectionKey != null) {
         _sectionExpanded[sectionKey] = true;
         widget.onSectionExpansionChanged?.call(sectionKey, true);
       }
+      if (useSplit && section != null && sectionKey != null) {
+        _selectedSectionId = sectionKey;
+        _detailTitle = widget.sectionTitleBuilder(section.titleKey);
+        _detailContent = ListView(
+          padding: const EdgeInsets.all(16),
+          children: children,
+        );
+      }
     });
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.clear();
+    _searchController.addListener(_onSearchChanged);
     _searchFocusNode.unfocus();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -167,22 +207,37 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final isLandscape = mediaQuery.size.width > mediaQuery.size.height;
+    final isSplit = _useSplitLayout(context);
     final hasSearch = _searchQuery.isNotEmpty;
     final settings = widget.settings;
     final registry = widget.registry;
 
-    final sections = hasSearch
-        ? _buildSearchResults(settings, registry)
-        : _buildSections(settings, registry, isLandscape);
+    final searchResults = hasSearch
+        ? ref.watch(settingsSearchResultsProvider(_searchQuery))
+        : const <SearchResult>[];
+    final filteredSearch = hasSearch
+        ? _filterSearchResults(searchResults)
+        : const <SearchResult>[];
 
-    final listView = ListView(
-      controller: hasSearch ? null : _scrollController,
-      children: sections,
-    );
+    final Widget listPane;
+    if (hasSearch && filteredSearch.isEmpty) {
+      listPane = EmptySearchResults(
+        query: _searchQuery,
+        message: widget.emptySearchMessageBuilder?.call(_searchQuery) ??
+            'No settings found for "$_searchQuery"',
+      );
+    } else if (hasSearch) {
+      listPane = ListView(
+        children: _searchResultWidgets(settings, registry, filteredSearch),
+      );
+    } else {
+      listPane = ListView(
+        controller: _scrollController,
+        children: _buildSections(settings, registry, isSplit),
+      );
+    }
 
-    if (!isLandscape && _selectedSectionId != null) {
+    if (!isSplit && _selectedSectionId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {
@@ -194,9 +249,9 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
       });
     }
 
-    final bodyContent = isLandscape
+    final bodyContent = isSplit && !hasSearch
         ? SplitScreenLayout(
-            listPane: listView,
+            listPane: listPane,
             detailPane: _detailContent,
             detailTitle: _detailTitle,
             onCloseDetail: () => setState(() {
@@ -208,13 +263,14 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
         : Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 600),
-              child: listView,
+              child: listPane,
             ),
           );
 
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        actions: widget.actions,
       ),
       body: Column(
         children: [
@@ -225,7 +281,6 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
               hintText: widget.searchHint,
               controller: _searchController,
               focusNode: _searchFocusNode,
-              onChanged: (_) {},
             ),
           ),
           Expanded(child: bodyContent),
@@ -246,10 +301,10 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
       final visibleSettings = registry.getVisibleSettingsInSection(section.key);
       List<Widget> children;
       if (widget.sectionContentBuilder != null) {
-        final defaultChildren = _buildSectionChildren(settings, section.key);
+        final defaultChildren = _sectionChildren(settings, section.key);
         children = widget.sectionContentBuilder!(section.key, defaultChildren);
       } else {
-        children = _buildSectionChildren(settings, section.key);
+        children = _sectionChildren(settings, section.key);
       }
       if (children.isEmpty && visibleSettings.isEmpty) continue;
 
@@ -282,7 +337,7 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
     return result;
   }
 
-  List<Widget> _buildSectionChildren(
+  List<Widget> _sectionChildren(
     SettingsProviders settings,
     String sectionKey,
   ) {
@@ -328,25 +383,17 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
     });
   }
 
-  List<Widget> _buildSearchResults(
+  List<SearchResult> _filterSearchResults(List<SearchResult> results) {
+    final filter = widget.searchResultFilter;
+    if (filter == null) return results;
+    return results.where(filter).toList();
+  }
+
+  List<Widget> _searchResultWidgets(
     SettingsProviders settings,
     SettingsRegistry registry,
+    List<SearchResult> results,
   ) {
-    var results = ref.watch(settingsSearchResultsProvider(_searchQuery));
-    final filter = widget.searchResultFilter;
-    if (filter != null) {
-      results = results.where(filter).toList();
-    }
-    if (results.isEmpty) {
-      final message = widget.emptySearchMessageBuilder?.call(_searchQuery) ??
-          'No settings found for "$_searchQuery"';
-      return [
-        EmptySearchResults(
-          query: _searchQuery,
-          message: message,
-        ),
-      ];
-    }
     return buildSearchResultWidgets(
       results,
       tileBuilder: (setting) {

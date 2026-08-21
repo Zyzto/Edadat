@@ -51,6 +51,8 @@ const exampleTranslations = <String, Map<String, String>>{
     'name_dialog': 'Display name',
     'cancel': 'Cancel',
     'confirm': 'Confirm',
+    'layout_mobile': 'Mobile view',
+    'layout_desktop': 'Desktop view',
   },
   'ar': {
     'app_title': 'إعدادات',
@@ -100,6 +102,8 @@ const exampleTranslations = <String, Map<String, String>>{
     'name_dialog': 'الاسم المعروض',
     'cancel': 'إلغاء',
     'confirm': 'تأكيد',
+    'layout_mobile': 'عرض الجوال',
+    'layout_desktop': 'عرض سطح المكتب',
   },
 };
 

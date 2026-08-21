@@ -51,6 +51,17 @@ void main() {
       visible: false,
     );
 
+    final displayName = StringSetting(
+      'display_name',
+      defaultValue: 'Ada',
+      titleKey: 'display_name',
+      section: 'about',
+      searchTerms: const {
+        'en': ['name', 'profile'],
+        'ar': ['اسم', 'ملف'],
+      },
+    );
+
     final exportAction = ActionSetting(
       'action_export',
       titleKey: 'export_data',
@@ -65,7 +76,7 @@ void main() {
 
     registry = SettingsRegistry.withSettings(
       sections: const [appearance, about],
-      settings: [theme, language, hidden, exportAction],
+      settings: [theme, language, hidden, displayName, exportAction],
     );
 
     localization = PreIndexedLocalizationProvider({
@@ -78,6 +89,7 @@ void main() {
         'export_data': 'Export data',
         'export_data_description': 'Save a backup file',
         'internal_flag': 'Internal',
+        'display_name': 'Display name',
       },
       'ar': {
         'appearance': 'المظهر',
@@ -88,6 +100,7 @@ void main() {
         'export_data': 'تصدير البيانات',
         'export_data_description': 'حفظ ملف نسخ احتياطي',
         'internal_flag': 'داخلي',
+        'display_name': 'الاسم المعروض',
       },
     });
   });
@@ -170,5 +183,28 @@ void main() {
 
     final byAr = index.search('تصدير');
     expect(byAr.map((r) => r.setting.key), contains('action_export'));
+  });
+
+  test('Arabic queries do not fuzzy-match unrelated titles', () async {
+    final index = SearchIndex(
+      registry: registry,
+      localizationProvider: localization,
+    );
+    await index.build();
+
+    final keys = index.search('مظهر').map((r) => r.setting.key);
+    expect(keys, contains('theme_mode'));
+    expect(keys, isNot(contains('display_name')));
+  });
+
+  test('Latin typos of 4+ letters still match', () async {
+    final index = SearchIndex(
+      registry: registry,
+      localizationProvider: localization,
+    );
+    await index.build();
+
+    expect(index.search('thme').map((r) => r.setting.key), contains('theme_mode'));
+    expect(index.search('xyzq'), isEmpty);
   });
 }

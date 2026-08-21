@@ -53,3 +53,4 @@ flutter run
 4. **UI** — `RegistrySettingsPage` tiles, search, info/action rows
 5. **Search** — English and Arabic terms against the same index
 6. **Reactive updates** — language, theme mode, and accent color drive `MaterialApp`
+7. **Layout toggle** — app-bar switch between mobile catalog and desktop split view
