@@ -5,6 +5,8 @@
 /// split layout on landscape, and custom section/tile builders.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -115,8 +117,6 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
   String _searchQuery = '';
   final Map<String, bool> _sectionExpanded = {};
   String? _selectedSectionId;
-  Widget? _detailContent;
-  String? _detailTitle;
   String? _pendingScrollKey;
 
   @override
@@ -147,8 +147,6 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
       _searchQuery = query;
       if (query.isNotEmpty) {
         _selectedSectionId = null;
-        _detailContent = null;
-        _detailTitle = null;
       }
     });
   }
@@ -173,9 +171,6 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
     final section =
         sectionKey != null ? widget.registry.getSection(sectionKey) : null;
     final useSplit = _useSplitLayout(context);
-    final children = sectionKey != null
-        ? _sectionChildren(widget.settings, sectionKey)
-        : const <Widget>[];
 
     setState(() {
       _searchQuery = '';
@@ -186,11 +181,6 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
       }
       if (useSplit && section != null && sectionKey != null) {
         _selectedSectionId = sectionKey;
-        _detailTitle = widget.sectionTitleBuilder(section.titleKey);
-        _detailContent = ListView(
-          padding: const EdgeInsets.all(16),
-          children: children,
-        );
       }
     });
     _searchController.removeListener(_onSearchChanged);
@@ -198,11 +188,41 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
     _searchController.addListener(_onSearchChanged);
     _searchFocusNode.unfocus();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted || _pendingScrollKey != setting.key) return;
-      await _anchors.scrollTo(setting.key, controller: _scrollController);
-      _pendingScrollKey = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_scrollToPending(setting.key, waitForExpand: !useSplit));
     });
+  }
+
+  /// Waits until the target tile is mounted, then highlights and scrolls to it.
+  ///
+  /// Split layout mounts tiles in the detail pane (not the left list). Stacked
+  /// layout mounts them only after [CardSettingsSection]'s ~200ms expand
+  /// animation, so a single post-frame callback is often too early.
+  Future<void> _scrollToPending(
+    String settingKey, {
+    required bool waitForExpand,
+  }) async {
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted || _pendingScrollKey != settingKey) return;
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted || _pendingScrollKey != settingKey) return;
+
+    if (waitForExpand) {
+      await Future<void>.delayed(const Duration(milliseconds: 220));
+      if (!mounted || _pendingScrollKey != settingKey) return;
+    }
+
+    if (_anchors.keyFor(settingKey).currentContext == null) {
+      await Future<void>.delayed(const Duration(milliseconds: 220));
+      if (!mounted || _pendingScrollKey != settingKey) return;
+    }
+
+    // Do not pass the left-list controller: in split mode the tile lives in
+    // the detail pane, and [Scrollable.ensureVisible] finds that scrollable.
+    await _anchors.scrollTo(settingKey);
+    if (_pendingScrollKey == settingKey) {
+      _pendingScrollKey = null;
+    }
   }
 
   @override
@@ -242,22 +262,19 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
         if (mounted) {
           setState(() {
             _selectedSectionId = null;
-            _detailContent = null;
-            _detailTitle = null;
           });
         }
       });
     }
 
+    final selectedSectionId = _selectedSectionId;
     final bodyContent = isSplit && !hasSearch
         ? SplitScreenLayout(
             listPane: listPane,
-            detailPane: _detailContent,
-            detailTitle: _detailTitle,
+            detailPane: _buildDetailPane(settings, selectedSectionId),
+            detailTitle: _detailTitleFor(selectedSectionId),
             onCloseDetail: () => setState(() {
               _selectedSectionId = null;
-              _detailContent = null;
-              _detailTitle = null;
             }),
           )
         : Center(
@@ -299,13 +316,7 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
 
     for (final section in sortedSections) {
       final visibleSettings = registry.getVisibleSettingsInSection(section.key);
-      List<Widget> children;
-      if (widget.sectionContentBuilder != null) {
-        final defaultChildren = _sectionChildren(settings, section.key);
-        children = widget.sectionContentBuilder!(section.key, defaultChildren);
-      } else {
-        children = _sectionChildren(settings, section.key);
-      }
+      final children = _contentForSection(settings, section.key);
       if (children.isEmpty && visibleSettings.isEmpty) continue;
 
       final isExpanded = _isSectionExpanded(section);
@@ -322,15 +333,9 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
           sectionId: section.key,
           isSelected: _selectedSectionId == section.key && isLandscape,
           isLandscape: isLandscape,
-          onLandscapeTap: () => _showSectionInDetail(
-            sectionId: section.key,
-            title: sectionTitle,
-            content: ListView(
-              padding: const EdgeInsets.all(16),
-              children: children,
-            ),
-          ),
-          children: children,
+          onLandscapeTap: () => _showSectionInDetail(section.key),
+          // Tiles (and their [GlobalKey]s) live in the detail pane when split.
+          children: isLandscape ? const <Widget>[] : children,
         ),
       );
     }
@@ -371,16 +376,35 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
     return result;
   }
 
-  void _showSectionInDetail({
-    required String sectionId,
-    required String title,
-    required Widget content,
-  }) {
-    setState(() {
-      _selectedSectionId = sectionId;
-      _detailTitle = title;
-      _detailContent = content;
-    });
+  void _showSectionInDetail(String sectionId) {
+    setState(() => _selectedSectionId = sectionId);
+  }
+
+  List<Widget> _contentForSection(
+    SettingsProviders settings,
+    String sectionKey,
+  ) {
+    if (widget.sectionContentBuilder != null) {
+      final defaultChildren = _sectionChildren(settings, sectionKey);
+      return widget.sectionContentBuilder!(sectionKey, defaultChildren);
+    }
+    return _sectionChildren(settings, sectionKey);
+  }
+
+  String? _detailTitleFor(String? sectionId) {
+    if (sectionId == null) return null;
+    final section = widget.registry.getSection(sectionId);
+    if (section == null) return null;
+    return widget.sectionTitleBuilder(section.titleKey);
+  }
+
+  Widget? _buildDetailPane(SettingsProviders settings, String? sectionId) {
+    if (sectionId == null) return null;
+    return ListView(
+      key: ValueKey('detail_$sectionId'),
+      padding: const EdgeInsets.all(16),
+      children: _contentForSection(settings, sectionId),
+    );
   }
 
   List<SearchResult> _filterSearchResults(List<SearchResult> results) {

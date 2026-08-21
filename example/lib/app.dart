@@ -262,9 +262,12 @@ class _PhoneFrame extends StatelessWidget {
         ],
       ),
       clipBehavior: Clip.antiAlias,
-      child: MediaQuery(
-        data: MediaQuery.of(context).copyWith(size: size),
-        child: child,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(size: size),
+          child: child,
+        ),
       ),
     );
   }

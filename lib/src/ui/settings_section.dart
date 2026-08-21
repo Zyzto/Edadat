@@ -272,6 +272,7 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
             )
           : null,
       hintText: widget.hintText,
+      floatingLabelBehavior: FloatingLabelBehavior.never,
       border: const OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(24)),
       ),

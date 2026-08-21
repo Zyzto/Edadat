@@ -27,6 +27,8 @@ void main() {
   ) async {
     await pumpExampleApp(tester);
 
+    expect(find.text('Search settings...'), findsOneWidget);
+
     await tester.enterText(searchField, 'zzzznotfound');
     await tester.pumpAndSettle();
     expect(find.textContaining('No settings found'), findsOneWidget);
@@ -38,6 +40,7 @@ void main() {
     expect(tester.widget<TextField>(searchField).controller?.text, isEmpty);
     expect(find.text('General'), findsOneWidget);
     expect(find.textContaining('No settings found'), findsNothing);
+    expect(find.text('Search settings...'), findsOneWidget);
   });
 
   testWidgets('selecting a search result jumps back to the tile', (
@@ -50,8 +53,8 @@ void main() {
     expect(find.text('General › Theme'), findsOneWidget);
 
     await tester.tap(find.text('General › Theme'));
-    await tester.pumpAndSettle();
-    await tester.pump(const Duration(milliseconds: 1600));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 3));
 
     expect(tester.widget<TextField>(searchField).controller?.text, isEmpty);
     expect(find.text('General'), findsOneWidget);
@@ -75,5 +78,89 @@ void main() {
     await tester.tap(find.text('Appearance'));
     await tester.pumpAndSettle();
     expect(find.text('Accent color'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('layout_toggle')));
+    await tester.pumpAndSettle();
+    expect(find.text('Select a setting to view details'), findsNothing);
+    expect(find.text('Accent color'), findsOneWidget);
+    expect(find.text('General'), findsOneWidget);
+  });
+
+  testWidgets('phone frame wraps the catalog on a wide mobile host', (
+    tester,
+  ) async {
+    await pumpExampleApp(tester);
+    tester.view.physicalSize = const Size(1600, 1200);
+    tester.view.devicePixelRatio = 2;
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FittedBox), findsOneWidget);
+    expect(find.text('Edadat'), findsOneWidget);
+    expect(find.text('General'), findsOneWidget);
+    expect(find.text('Accent color'), findsOneWidget);
+    expect(find.text('Search settings...'), findsOneWidget);
+  });
+
+  testWidgets('desktop detail pane rebuilds after language change', (
+    tester,
+  ) async {
+    await pumpExampleApp(tester);
+
+    await tester.tap(find.byKey(const ValueKey('layout_toggle')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('General'));
+    await tester.pumpAndSettle();
+    expect(find.text('Language'), findsWidgets);
+
+    await tester.tap(find.text('Language'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Arabic'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('اللغة'), findsWidgets);
+    expect(find.text('Language'), findsNothing);
+    expect(find.text('عام'), findsWidgets);
+
+    await tester.tap(find.text('المظهر'));
+    await tester.pumpAndSettle();
+    expect(find.text('لون التمييز'), findsOneWidget);
+    expect(find.text('Accent color'), findsNothing);
+  });
+
+  testWidgets('desktop search result opens the section in the detail pane', (
+    tester,
+  ) async {
+    await pumpExampleApp(tester);
+
+    await tester.tap(find.byKey(const ValueKey('layout_toggle')));
+    await tester.pumpAndSettle();
+    expect(find.text('Select a setting to view details'), findsOneWidget);
+
+    await tester.enterText(searchField, 'theme');
+    await tester.pumpAndSettle();
+    expect(find.text('General › Theme'), findsOneWidget);
+
+    await tester.tap(find.text('General › Theme'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 3));
+
+    expect(tester.widget<TextField>(searchField).controller?.text, isEmpty);
+    expect(find.text('Select a setting to view details'), findsNothing);
+    expect(find.byKey(const ValueKey('detail_general')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('detail_general')),
+        matching: find.text('Theme'),
+      ),
+      findsWidgets,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('detail_general')),
+        matching: find.text('Light'),
+      ),
+      findsOneWidget,
+    );
   });
 }

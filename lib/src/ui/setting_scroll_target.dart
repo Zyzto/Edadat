@@ -2,6 +2,8 @@
 /// Scroll-to and highlight helpers for settings tiles.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 /// Registry of [GlobalKey]s for setting tiles, used to scroll and highlight.
@@ -16,6 +18,9 @@ class SettingAnchorRegistry {
   SettingAnchorRegistry({
     this.highlightDuration = const Duration(milliseconds: 1500),
   });
+
+  bool _disposed = false;
+  Timer? _highlightTimer;
 
   /// Returns a stable [GlobalKey] for [settingKey].
   GlobalKey keyFor(String settingKey) {
@@ -41,6 +46,14 @@ class SettingAnchorRegistry {
     double alignment = 0.1,
   }) async {
     highlightedKey.value = settingKey;
+    final token = settingKey;
+    _highlightTimer?.cancel();
+    _highlightTimer = Timer(highlightDuration, () {
+      if (_disposed) return;
+      if (highlightedKey.value == token) {
+        highlightedKey.value = null;
+      }
+    });
 
     Future<void> ensure(BuildContext target) {
       return Scrollable.ensureVisible(
@@ -51,8 +64,12 @@ class SettingAnchorRegistry {
       );
     }
 
-    final ctx = keyFor(settingKey).currentContext;
-    if (ctx != null) {
+    var ctx = keyFor(settingKey).currentContext;
+    if (ctx == null || !ctx.mounted) {
+      await WidgetsBinding.instance.endOfFrame;
+      ctx = keyFor(settingKey).currentContext;
+    }
+    if (ctx != null && ctx.mounted) {
       await ensure(ctx);
     } else if (knownOffset != null &&
         controller != null &&
@@ -66,16 +83,11 @@ class SettingAnchorRegistry {
         await ensure(after);
       }
     }
-
-    final token = settingKey;
-    Future<void>.delayed(highlightDuration, () {
-      if (highlightedKey.value == token) {
-        highlightedKey.value = null;
-      }
-    });
   }
 
   void dispose() {
+    _disposed = true;
+    _highlightTimer?.cancel();
     highlightedKey.dispose();
   }
 }
