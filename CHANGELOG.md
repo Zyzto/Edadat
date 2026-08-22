@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.2] - 2026-08-22
+
+### Fixed
+- **`SplitScreenLayout`**: wrap list and detail panes in `Material` so
+  `ListTile` ink is visible under Flutter 3.47's ancestor-color assert.
+
+### Changed
+- Pin Flutter **3.47.1** (Dart 3.13.1) with FVM (`.fvmrc`) and the same
+  version in CI / Release.
+- Dependencies: `flutter_riverpod` ^3.4.2, `shared_preferences` ^2.5.5,
+  `easy_localization` ^3.0.8.
+
 ## [0.7.1] - 2026-08-22
 
 ### Fixed

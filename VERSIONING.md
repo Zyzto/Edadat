@@ -12,7 +12,7 @@ Edadat (`flutter_settings_framework`) uses **[SemVer](https://semver.org/)**:
 
 ## Tag format
 
-Git tags are `vMAJOR.MINOR.PATCH` (example: `v0.7.1`).
+Git tags are `vMAJOR.MINOR.PATCH` (example: `v0.7.2`).
 
 The tag **must** match `version:` in [`pubspec.yaml`](pubspec.yaml) (build metadata `+N` is ignored for tagging).
 
@@ -22,7 +22,7 @@ Prefer **pub.dev**:
 
 ```yaml
 dependencies:
-  flutter_settings_framework: ^0.7.1
+  flutter_settings_framework: ^0.7.2
 ```
 
 Or pin a **git tag** (not `main` or a raw commit):
@@ -32,7 +32,7 @@ dependencies:
   flutter_settings_framework:
     git:
       url: https://github.com/Zyzto/edadat.git
-      ref: v0.7.1
+      ref: v0.7.2
 ```
 
 ## Release checklist

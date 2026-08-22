@@ -41,6 +41,9 @@ app.*.map.json
 coverage/
 *.lcov
 
+# FVM Version Cache
+.fvm/
+
 # OS generated files
 Thumbs.db
 .DS_Store

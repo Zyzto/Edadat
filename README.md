@@ -121,7 +121,7 @@ Rendered from the [`example/`](example/) catalog (`flutter test test/screenshots
 
 ```yaml
 dependencies:
-  flutter_settings_framework: ^0.7.1
+  flutter_settings_framework: ^0.7.2
 ```
 
 Or:
@@ -137,14 +137,14 @@ dependencies:
   flutter_settings_framework:
     git:
       url: https://github.com/Zyzto/edadat.git
-      ref: v0.7.1
+      ref: v0.7.2
 ```
 
 ```dart
 import 'package:flutter_settings_framework/flutter_settings_framework.dart';
 ```
 
-Current version: **0.7.1**.
+Current version: **0.7.2**.
 
 ---
 

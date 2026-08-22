@@ -1145,21 +1145,24 @@ class SplitScreenLayout extends StatelessWidget {
         // List pane
         Expanded(
           flex: listFlex,
-          child: Container(
-            decoration: BoxDecoration(
-              color: theme.scaffoldBackgroundColor,
-              border: Border(
-                left: dir == TextDirection.rtl ? endBorder : BorderSide.none,
-                right: dir == TextDirection.ltr ? endBorder : BorderSide.none,
+          child: Material(
+            color: theme.scaffoldBackgroundColor,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(
+                  left: dir == TextDirection.rtl ? endBorder : BorderSide.none,
+                  right: dir == TextDirection.ltr ? endBorder : BorderSide.none,
+                ),
               ),
+              child: listPane,
             ),
-            child: listPane,
           ),
         ),
-        // Detail pane
+        // Detail pane. Material (not ColoredBox/Container color) so ListTile
+        // ink has a local ancestor after Flutter 3.47's visibility assert.
         Expanded(
           flex: detailFlex,
-          child: Container(
+          child: Material(
             color: theme.scaffoldBackgroundColor,
             child: detailPane != null
                 ? _buildDetailPane(context, theme)

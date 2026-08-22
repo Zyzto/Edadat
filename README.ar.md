@@ -146,7 +146,7 @@
 
 ```yaml
 dependencies:
-  flutter_settings_framework: ^0.7.1
+  flutter_settings_framework: ^0.7.2
 ```
 
 <div dir="rtl" lang="ar">
@@ -170,7 +170,7 @@ dependencies:
   flutter_settings_framework:
     git:
       url: https://github.com/Zyzto/edadat.git
-      ref: v0.7.1
+      ref: v0.7.2
 ```
 
 ```dart
@@ -179,7 +179,7 @@ import 'package:flutter_settings_framework/flutter_settings_framework.dart';
 
 <div dir="rtl" lang="ar">
 
-الإصدار الحالي: **0.7.1**.
+الإصدار الحالي: **0.7.2**.
 
 </div>
 
