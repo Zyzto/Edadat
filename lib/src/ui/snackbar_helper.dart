@@ -7,6 +7,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'l10n.dart';
 import 'responsive_helpers.dart';
 
 /// Snackbar type for different visual styles.
@@ -92,7 +93,7 @@ class AppSnackbar {
       message: message,
       duration: duration ?? const Duration(seconds: 4),
       action: SnackBarAction(
-        label: undoLabel ?? 'Undo',
+        label: undoLabel ?? settingsUndoLabel(context),
         textColor: _getActionTextColor(context, SnackbarType.undo),
         onPressed: () {
           HapticFeedback.selectionClick();

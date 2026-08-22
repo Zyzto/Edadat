@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD033 MD060 -->
+
 <div dir="rtl" lang="ar">
 
 <p align="center">
@@ -13,20 +15,32 @@
 </p>
 
 <p align="center">
-  <a href="https://pub.dev/packages/flutter_settings_framework"><img alt="pub.dev" src="https://img.shields.io/pub/v/flutter_settings_framework.svg?style=flat-square&label=pub.dev&color=8B6914" /></a>
-  <a href="https://github.com/Zyzto/Edadat"><img alt="repo" src="https://img.shields.io/badge/github-Zyzto%2FEdadat-C0C0C0?style=flat-square" /></a>
-  <img alt="flutter" src="https://img.shields.io/badge/Flutter-%3E%3D3.0-C0C0C0?style=flat-square&logo=flutter&logoColor=white" />
-  <img alt="license" src="https://img.shields.io/badge/license-MPL--2.0-8B6914?style=flat-square" />
+  <a href="https://zyzto.github.io/Edadat/"><img alt="المثال الحي" src="https://img.shields.io/badge/live%20demo-zyzto.github.io%2FEdadat-8B6914?style=for-the-badge" /></a>
 </p>
 
 <p align="center">
+  <a href="https://pub.dev/packages/flutter_settings_framework"><img alt="pub.dev" src="https://img.shields.io/pub/v/flutter_settings_framework.svg?style=flat-square&label=pub.dev&color=8B6914" /></a>
+  <a href="https://github.com/Zyzto/Edadat"><img alt="repo" src="https://img.shields.io/badge/github-Zyzto%2FEdadat-C0C0C0?style=flat-square" /></a>
+  <img alt="flutter" src="https://img.shields.io/badge/Flutter-%3E%3D3.0-C0C0C0?style=flat-square&logo=flutter&logoColor=white" />
+  <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/license-MPL--2.0-8B6914?style=flat-square" /></a>
+</p>
+
+<p align="center">
+  <strong><a href="https://zyzto.github.io/Edadat/">المثال الحي</a></strong>
+  — افتح كتالوج المثال في المتصفح<br/>
+  <a href="https://zyzto.github.io/Edadat/"><span dir="ltr">zyzto.github.io/Edadat</span></a>
+</p>
+
+<p align="center">
+  <a href="https://zyzto.github.io/Edadat/">المثال الحي</a> ·
   <a href="#التثبيت">Install</a> ·
   <a href="#ابدأ-في-دقائق">Quick start</a> ·
   <a href="#لقطات">Screenshots</a> ·
   <a href="#ماذا-تقدّم">Features</a> ·
   <a href="#أنواع-الإعدادات">Types</a> ·
   <a href="#المثال">Example</a> ·
-  <a href="https://zyzto.github.io/Edadat/">المثال الحي</a>
+  <a href="CHANGELOG.md">Changelog</a> ·
+  <a href="VERSIONING.md">Versioning</a>
   <br/>
   <a href="README.md"><span dir="ltr">English</span></a> ·
   <a href="docs/i18n-ar.md">دليل أسلوب العربية</a>
@@ -68,22 +82,26 @@
 </div>
 
 <p align="center">
-  <img src="screenshots/settings-ar.png" alt="كتالوج الإعدادات (العربية)" width="180" />
-  <img src="screenshots/settings-en.png" alt="كتالوج الإعدادات (الإنجليزية)" width="180" />
-  <img src="screenshots/search-ar.png" alt="بحث مظهر" width="180" />
+  <a href="https://zyzto.github.io/Edadat/">
+    <img src="screenshots/settings-ar.png" alt="كتالوج الإعدادات (العربية) — المثال الحي" width="180" />
+    <img src="screenshots/settings-en.png" alt="كتالوج الإعدادات (الإنجليزية) — المثال الحي" width="180" />
+    <img src="screenshots/search-ar.png" alt="بحث مظهر — المثال الحي" width="180" />
+  </a>
 </p>
 
 <p align="center">
-  <sub>العربية · الإنجليزية · بحث bilingual</sub>
+  <sub>العربية · الإنجليزية · بحث bilingual — <a href="https://zyzto.github.io/Edadat/">جرّبها في المثال الحي</a></sub>
 </p>
 
 <details>
 <summary>السمة الداكنة</summary>
 
 <p align="center">
-  <img src="screenshots/settings-ar-dark.png" alt="كتالوج الإعدادات الداكن (العربية)" width="140" />
-  <img src="screenshots/settings-en-dark.png" alt="كتالوج الإعدادات الداكن (الإنجليزية)" width="140" />
-  <img src="screenshots/search-en.png" alt="بحث theme" width="140" />
+  <a href="https://zyzto.github.io/Edadat/">
+    <img src="screenshots/settings-ar-dark.png" alt="كتالوج الإعدادات الداكن (العربية) — المثال الحي" width="140" />
+    <img src="screenshots/settings-en-dark.png" alt="كتالوج الإعدادات الداكن (الإنجليزية) — المثال الحي" width="140" />
+    <img src="screenshots/search-en.png" alt="بحث theme — المثال الحي" width="140" />
+  </a>
 </p>
 
 <p align="center">
@@ -128,7 +146,7 @@
 
 ```yaml
 dependencies:
-  flutter_settings_framework: ^0.6.0
+  flutter_settings_framework: ^0.7.0
 ```
 
 <div dir="rtl" lang="ar">
@@ -152,7 +170,7 @@ dependencies:
   flutter_settings_framework:
     git:
       url: https://github.com/Zyzto/edadat.git
-      ref: v0.6.0
+      ref: v0.7.0
 ```
 
 ```dart
@@ -161,7 +179,7 @@ import 'package:flutter_settings_framework/flutter_settings_framework.dart';
 
 <div dir="rtl" lang="ar">
 
-الإصدار الحالي: **0.6.0**.
+الإصدار الحالي: **0.7.0**.
 
 </div>
 
@@ -402,23 +420,33 @@ final results = searchIndex.search('عربي');
 
 ## المثال
 
-انظر <span dir="ltr"><a href="example/"><code>example/</code></a></span> لكتالوج bilingual على <span dir="ltr"><code>RegistrySettingsPage</code></span>: Bool و Enum و Color و Double و Int و String و StringList و Action و <span dir="ltr"><code>dependsOn</code></span> وبحث إنجليزي/عربي.
+<strong><a href="https://zyzto.github.io/Edadat/">المثال الحي — <span dir="ltr">zyzto.github.io/Edadat</span></a></strong>
 
-المثال على الويب: <span dir="ltr"><a href="https://zyzto.github.io/Edadat/">zyzto.github.io/Edadat</a></span>
+الكتالوج المستضاف هو بناء ويب <span dir="ltr"><code>example/</code></span>. التكامل المستمر ينشره بعد نجاح الاختبارات على <span dir="ltr"><code>main</code></span>.
+
+انظر <span dir="ltr"><a href="example/"><code>example/</code></a></span> لكتالوج bilingual على <span dir="ltr"><code>RegistrySettingsPage</code></span>: Bool و Enum و Color و Double و Int و String و StringList و Action و <span dir="ltr"><code>dependsOn</code></span> وبحث إنجليزي/عربي. تبديل اللغة والسمة فوق الكتالوج (نفس chrome في <span dir="ltr"><a href="https://github.com/Zyzto/Safaeh">Safaeh</a></span>).
 
 المثال بأسلوب package (web فقط في المستودع)؛ حلّل بـ:
 
 </div>
 
 ```bash
-cd example && flutter pub get && dart analyze --fatal-infos
+cd example && flutter pub get && dart analyze --fatal-infos && flutter test
 ```
 
 <div dir="rtl" lang="ar">
 
+<span dir="ltr"><code>example/test/screenshots_test.dart</code></span> يكتب صور الكتالوج إلى <span dir="ltr"><a href="screenshots/"><code>screenshots/</code></a></span>.
+
 للتشغيل على جهاز، ولّد platforms الأخرى أولاً (<span dir="ltr"><code>flutter create . --platforms=android,ios</code></span> داخل <span dir="ltr"><code>example/</code></span>). التفاصيل: <span dir="ltr"><a href="example/README.md">example/README.md</a></span>.
 
+اختبارات الحزمة:
+
 </div>
+
+```bash
+dart analyze --fatal-infos && flutter test
+```
 
 ---
 

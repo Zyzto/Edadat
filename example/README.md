@@ -2,11 +2,15 @@
 
 Bilingual `RegistrySettingsPage` catalog for `flutter_settings_framework`
 (definitions, Riverpod wiring, tiles, EN/AR search, `dependsOn`).
+Language and theme toggles sit above the catalog (same chrome as Safaeh).
 
 Live: [zyzto.github.io/Edadat](https://zyzto.github.io/Edadat/)
 
-`web/` is in-tree for GitHub Pages. Other platforms are not generated, so
-`flutter run` on a device needs `flutter create .` first.
+`web/` is in-tree for GitHub Pages. A green [CI](../.github/workflows/ci.yml)
+run on `main` builds `example/` (`flutter build web --release --base-href /Edadat/`)
+and deploys that site. **Run workflow** on CI republishes the same path.
+Other platforms are not generated, so `flutter run` on a device needs
+`flutter create .` first.
 
 ## Analyze
 
@@ -24,7 +28,8 @@ flutter test
 ```
 
 `test/screenshots_test.dart` renders the catalog and writes PNGs to
-[`../screenshots/`](../screenshots/) for the package READMEs.
+[`../screenshots/`](../screenshots/) for the package READMEs. CI runs that
+test and uploads the PNGs as the `screenshots` artifact.
 
 ## Web
 
@@ -54,3 +59,4 @@ flutter run
 5. **Search** — English and Arabic terms against the same index
 6. **Reactive updates** — language, theme mode, and accent color drive `MaterialApp`
 7. **Layout toggle** — app-bar switch between mobile catalog and desktop split view
+8. **Language + theme toggles** — overlay chrome with circular theme reveal

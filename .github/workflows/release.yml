@@ -77,6 +77,46 @@ jobs:
           body_path: /tmp/notes.md
           generate_release_notes: true
 
+  pages:
+    name: GitHub Pages
+    needs: verify
+    runs-on: ubuntu-latest
+    concurrency:
+      group: github-pages
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Build example web
+        working-directory: example
+        run: |
+          flutter pub get
+          flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: example/build/web
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
   # Requires Automated publishing on pub.dev Admin → GitHub Actions
   # for flutter_settings_framework → Zyzto/edadat, tag pattern v{{version}}.
   # Docs: https://dart.dev/tools/pub/automated-publishing

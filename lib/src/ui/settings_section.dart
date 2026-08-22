@@ -8,6 +8,7 @@ library;
 import 'package:flutter/material.dart';
 import '../core/setting_definition.dart';
 import '../core/search_index.dart';
+import 'l10n.dart';
 
 /// Collapsible settings section.
 ///
@@ -110,7 +111,14 @@ class SettingsSubsectionHeader extends StatelessWidget {
       child: Row(
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 18, color: theme.colorScheme.primary),
+            Icon(
+              icon == Icons.subdirectory_arrow_right &&
+                      Directionality.of(context) == TextDirection.rtl
+                  ? Icons.subdirectory_arrow_left
+                  : icon,
+              size: 18,
+              color: theme.colorScheme.primary,
+            ),
             const SizedBox(width: 8),
           ],
           Text(
@@ -268,6 +276,7 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
       suffixIcon: _controller.text.isNotEmpty
           ? IconButton(
               icon: const Icon(Icons.clear),
+              tooltip: MaterialLocalizations.of(context).clearButtonTooltip,
               onPressed: _clear,
             )
           : null,
@@ -291,9 +300,12 @@ class _SettingsSearchBarState extends State<SettingsSearchBar> {
       focusNode: _focusNode,
       autofocus: autofocus,
       decoration: _decoration(),
+      textDirection: Directionality.of(context),
       textInputAction: TextInputAction.search,
       autocorrect: false,
       enableSuggestions: false,
+      smartDashesType: SmartDashesType.disabled,
+      smartQuotesType: SmartQuotesType.disabled,
       onChanged: widget.onChanged,
       onSubmitted: widget.onSubmitted,
       onTapOutside: (_) {
@@ -408,7 +420,7 @@ List<Widget> filterWidgetsBySearch(
 }) {
   if (query.isEmpty) return widgets;
 
-  final normalizedQuery = query.toLowerCase();
+  final normalizedQuery = normalizeSearchText(query);
 
   // If section title matches, return all widgets
   if (sectionTitle != null &&
@@ -417,7 +429,7 @@ List<Widget> filterWidgetsBySearch(
   }
 
   bool matchesQuery(String? text) {
-    return text?.toLowerCase().contains(normalizedQuery) ?? false;
+    return text != null && normalizeSearchText(text).contains(normalizedQuery);
   }
 
   String? extractText(Widget? widget) {
@@ -469,16 +481,19 @@ List<Widget> buildSearchResultWidgets(
         entry.key.isNotEmpty ? sectionTitleBuilder(entry.key) : '';
     if (entry.key.isNotEmpty) {
       widgets.add(
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text(
-            sectionLabel,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-              color: Colors.grey,
-            ),
-          ),
+        Builder(
+          builder: (context) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                sectionLabel,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            );
+          },
         ),
       );
     }
@@ -491,32 +506,47 @@ List<Widget> buildSearchResultWidgets(
 
       final title = settingTitleBuilder?.call(result.setting) ??
           result.setting.titleKey;
-      final breadcrumb = sectionLabel.isEmpty
-          ? title
-          : '$sectionLabel › $title';
       widgets.add(
-        Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: () => onResultSelected(result),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (showBreadcrumbSubtitle)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                    child: Text(
-                      breadcrumb,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey,
-                      ),
-                    ),
+        Builder(
+          builder: (context) {
+            final breadcrumb = sectionLabel.isEmpty
+                ? title
+                : settingsBreadcrumb(
+                    sectionLabel,
+                    title,
+                    Directionality.of(context),
+                  );
+            return Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                onTap: () => onResultSelected(result),
+                child: Semantics(
+                  button: true,
+                  excludeSemantics: true,
+                  label: breadcrumb,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (showBreadcrumbSubtitle)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          child: Text(
+                            breadcrumb,
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                          ),
+                        ),
+                      IgnorePointer(child: tile),
+                    ],
                   ),
-                IgnorePointer(child: tile),
-              ],
-            ),
-          ),
+                ),
+              ),
+            );
+          },
         ),
       );
     }
@@ -612,7 +642,14 @@ class CardSettingsSection extends StatelessWidget {
             borderRadius: BorderRadius.vertical(
               top: Radius.circular(borderRadius),
             ),
-            child: Padding(
+            child: Semantics(
+              button: true,
+              header: true,
+              excludeSemantics: true,
+              expanded: isLandscape ? null : isExpanded,
+              selected: isLandscape ? isSelected : null,
+              label: title,
+              child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
@@ -651,9 +688,10 @@ class CardSettingsSection extends StatelessWidget {
                       ),
                     ),
                   if (isLandscape && isSelected)
-                    Icon(Icons.chevron_right, color: theme.colorScheme.primary),
+                    settingsChevronEnd(context, color: theme.colorScheme.primary),
                 ],
               ),
+            ),
             ),
           ),
           // Only show expanded content in portrait mode
@@ -687,26 +725,46 @@ class EmptySearchResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final copy = message ??
+        settingsEmptySearchFallback(
+          query,
+          Directionality.of(context),
+        );
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message ?? 'No settings found for "$query"',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-            ),
-          ],
+        child: Semantics(
+          container: true,
+          liveRegion: true,
+          label: copy,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ExcludeSemantics(
+                child: Icon(
+                  Icons.search_off,
+                  size: 64,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.3),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ExcludeSemantics(
+                child: Text(
+                  copy,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
+                      ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

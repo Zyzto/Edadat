@@ -131,7 +131,7 @@ class SearchIndex {
     for (final entry in setting.searchTerms.entries) {
       final localeCode = entry.key;
       for (final term in entry.value) {
-        _addToIndex(term.toLowerCase(), setting.key, locale: localeCode);
+        _addToIndex(normalizeSearchText(term), setting.key, locale: localeCode);
       }
     }
 
@@ -172,14 +172,17 @@ class SearchIndex {
   void _indexText(String text, String settingKey, {String? locale}) {
     if (text.isEmpty) return;
 
+    final normalized = normalizeSearchText(text);
+    if (normalized.isEmpty) return;
+
     // Index the full text
-    _addToIndex(text.toLowerCase(), settingKey, locale: locale);
+    _addToIndex(normalized, settingKey, locale: locale);
 
     // Index individual words
-    final words = text.split(RegExp(r'\s+'));
+    final words = normalized.split(RegExp(r'\s+'));
     for (final word in words) {
       if (word.length >= 2) {
-        _addToIndex(word.toLowerCase(), settingKey, locale: locale);
+        _addToIndex(word, settingKey, locale: locale);
       }
     }
   }
@@ -219,7 +222,7 @@ class SearchIndex {
       return [];
     }
 
-    final normalizedQuery = query.toLowerCase().trim();
+    final normalizedQuery = normalizeSearchText(query);
     final queryWords = normalizedQuery.split(RegExp(r'\s+'));
 
     // Track scores for each setting
@@ -368,6 +371,28 @@ class SearchIndex {
     _termToLocale.clear();
     _built = false;
   }
+}
+
+/// Fold case and Arabic presentation so search matches across scripts.
+///
+/// Strips tatweel and harakat, and maps alef / yeh variants to a common form.
+String normalizeSearchText(String input) {
+  final buffer = StringBuffer();
+  for (final unit in input.trim().codeUnits) {
+    if (unit == 0x0640) continue; // tatweel
+    if (unit >= 0x064B && unit <= 0x065F) continue; // harakat
+    if (unit == 0x0670) continue; // superscript alef
+    if (unit == 0x0622 || unit == 0x0623 || unit == 0x0625 || unit == 0x0671) {
+      buffer.write('\u0627'); // آ أ إ ٱ → ا
+      continue;
+    }
+    if (unit == 0x0649) {
+      buffer.write('\u064A'); // ى → ي
+      continue;
+    }
+    buffer.writeCharCode(unit);
+  }
+  return buffer.toString().toLowerCase();
 }
 
 class _ScoreAccumulator {

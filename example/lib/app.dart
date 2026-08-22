@@ -6,66 +6,140 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_settings_framework/flutter_settings_framework.dart';
 
+import 'appearance_toggles.dart';
 import 'catalog.dart';
+import 'profile_demo.dart';
+import 'theme_ripple.dart';
 
 enum ExamplePreviewLayout { mobile, desktop }
 
-class ExampleApp extends ConsumerWidget {
+/// Gold-family surfaces with contrast overrides so outline / secondary
+/// copy stay readable. Seed still comes from the accent-color setting.
+ThemeData catalogTheme(Brightness brightness, Color seed) {
+  final base = ColorScheme.fromSeed(seedColor: seed, brightness: brightness);
+  final scheme = switch (brightness) {
+    Brightness.light => base.copyWith(
+      onSurface: const Color(0xFF1F1708),
+      onSurfaceVariant: const Color(0xFF534A3C),
+      outline: const Color(0xFF7A6F5F),
+      outlineVariant: const Color(0xFFC9BDAA),
+      surface: const Color(0xFFFFF8F0),
+      surfaceContainerLow: const Color(0xFFF7EFE3),
+      surfaceContainerHigh: const Color(0xFFEDE3D4),
+      surfaceContainerHighest: const Color(0xFFE7DCCB),
+    ),
+    Brightness.dark => base.copyWith(
+      onSurface: const Color(0xFFF6EFE2),
+      onSurfaceVariant: const Color(0xFFD0C4B4),
+      outline: const Color(0xFFA89884),
+      outlineVariant: const Color(0xFF5A5146),
+      surface: const Color(0xFF16130F),
+      surfaceContainerLow: const Color(0xFF221E18),
+      surfaceContainerHigh: const Color(0xFF322C24),
+      surfaceContainerHighest: const Color(0xFF3C352C),
+    ),
+  };
+  return ThemeData(
+    colorScheme: scheme,
+    useMaterial3: true,
+    fontFamily: 'Roboto',
+    fontFamilyFallback: const ['Baz'],
+    appBarTheme: AppBarTheme(
+      backgroundColor: scheme.surface,
+      foregroundColor: scheme.onSurface,
+      surfaceTintColor: Colors.transparent,
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(foregroundColor: scheme.onSurface),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      hintStyle: TextStyle(color: scheme.onSurfaceVariant),
+      labelStyle: TextStyle(color: scheme.onSurfaceVariant),
+    ),
+  );
+}
+
+class ExampleApp extends ConsumerStatefulWidget {
   const ExampleApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ExampleApp> createState() => _ExampleAppState();
+}
+
+class _ExampleAppState extends ConsumerState<ExampleApp> {
+  var _layout = ExamplePreviewLayout.mobile;
+
+  @override
+  Widget build(BuildContext context) {
     final language = ref.watchSetting(languageSetting);
     final themeMode = themeModeFor(ref.watchSetting(themeModeSetting));
     final seed = Color(ref.watchSetting(themeColorSetting));
     final textScale = fontScaleFor(ref.watchSetting(fontSizeScaleSetting));
-    final locale = Locale(language);
-    final light = ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: seed),
-      useMaterial3: true,
-      fontFamily: 'Roboto',
-      fontFamilyFallback: const ['Baz'],
-    );
-    final dark = ThemeData(
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: seed,
-        brightness: Brightness.dark,
-      ),
-      useMaterial3: true,
-      fontFamily: 'Roboto',
-      fontFamilyFallback: const ['Baz'],
-    );
 
     return MaterialApp(
       title: translateExample('app_title', language),
       debugShowCheckedModeBanner: false,
-      locale: locale,
-      supportedLocales: const [Locale('en'), Locale('ar')],
+      locale: catalogFlutterLocale(language),
+      supportedLocales: [for (final item in catalogLocales) item.locale],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: light,
-      darkTheme: dark,
+      theme: catalogTheme(Brightness.light, seed),
+      darkTheme: catalogTheme(Brightness.dark, seed),
       themeMode: themeMode,
       builder: (context, child) {
+        final overlayMode = Theme.of(context).brightness == Brightness.dark
+            ? ThemeMode.dark
+            : ThemeMode.light;
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(
             textScaler: TextScaler.linear(textScale),
           ),
-          child: child ?? const SizedBox.shrink(),
+          child: ThemeRippleHost(
+            overlay: CatalogAppearanceToggles(
+              localeCode: language,
+              themeMode: overlayMode,
+              isMobileLayout: _layout == ExamplePreviewLayout.mobile,
+              onSelectLocale: (code) =>
+                  ref.updateSetting(languageSetting, code),
+              onToggleTheme: () async {
+                final current = ref.readSetting(themeModeSetting);
+                await ref.updateSetting(
+                  themeModeSetting,
+                  current == 'dark' ? 'light' : 'dark',
+                );
+              },
+              onToggleLayout: () {
+                setState(() {
+                  _layout = _layout == ExamplePreviewLayout.mobile
+                      ? ExamplePreviewLayout.desktop
+                      : ExamplePreviewLayout.mobile;
+                });
+              },
+            ),
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
-      home: ExampleSettingsPage(localeCode: language),
+      home: ExampleSettingsPage(
+        localeCode: language,
+        layout: _layout,
+      ),
     );
   }
 }
 
 class ExampleSettingsPage extends ConsumerStatefulWidget {
-  const ExampleSettingsPage({super.key, required this.localeCode});
+  const ExampleSettingsPage({
+    super.key,
+    required this.localeCode,
+    required this.layout,
+  });
 
   final String localeCode;
+  final ExamplePreviewLayout layout;
 
   @override
   ConsumerState<ExampleSettingsPage> createState() =>
@@ -73,8 +147,6 @@ class ExampleSettingsPage extends ConsumerStatefulWidget {
 }
 
 class _ExampleSettingsPageState extends ConsumerState<ExampleSettingsPage> {
-  ExamplePreviewLayout _layout = ExamplePreviewLayout.mobile;
-
   String t(String key) => translateExample(key, widget.localeCode);
 
   @override
@@ -82,7 +154,7 @@ class _ExampleSettingsPageState extends ConsumerState<ExampleSettingsPage> {
     final settings = ref.watch(settingsProvidersProvider);
     final registry = settings.registry;
     final tags = ref.watchSetting(tagsSetting);
-    final isMobile = _layout == ExamplePreviewLayout.mobile;
+    final isMobile = widget.layout == ExamplePreviewLayout.mobile;
     final host = MediaQuery.sizeOf(context);
 
     final page = RegistrySettingsPage(
@@ -95,6 +167,7 @@ class _ExampleSettingsPageState extends ConsumerState<ExampleSettingsPage> {
       enumLabelBuilder: t,
       emptySearchMessageBuilder: (query) =>
           t('empty_search').replaceAll('{query}', query),
+      emptyDetailMessage: t('empty_detail'),
       tileBuilder: (setting, defaultTile) {
         if (setting.key == displayNameSetting.key) {
           final value = ref.watchSetting(displayNameSetting);
@@ -126,23 +199,60 @@ class _ExampleSettingsPageState extends ConsumerState<ExampleSettingsPage> {
           return InfoSettingsTile(
             leading: Icon(setting.icon),
             title: Text(t(setting.titleKey)),
-            value: const Text('0.6.0'),
+            value: const Directionality(
+              textDirection: TextDirection.ltr,
+              child: Text('0.7.0'),
+            ),
             copyable: true,
-            copyValue: '0.6.0',
+            copyValue: '0.7.0',
+            copiedMessage: t('copied'),
           );
         }
         if (setting.key == licenseSetting.key) {
           return InfoSettingsTile(
             leading: Icon(setting.icon),
             title: Text(t(setting.titleKey)),
-            value: const Text('MPL-2.0'),
+            value: const Directionality(
+              textDirection: TextDirection.ltr,
+              child: Text('MPL-2.0'),
+            ),
             copyable: true,
             copyValue: 'MPL-2.0',
+            copiedMessage: t('copied'),
+          );
+        }
+        if (setting.key == openProfileSetting.key) {
+          final name = ref.watchSetting(displayNameSetting);
+          return ProfileSettingsCard(
+            leading: CircleAvatar(
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+              child: Text(name.isEmpty ? '?' : String.fromCharCode(name.runes.first)),
+            ),
+            title: Text(name),
+            subtitle: Directionality(
+              textDirection: TextDirection.ltr,
+              child: Text(t('profile_email')),
+            ),
+            onTap: () => _editDisplayName(context, ref, name),
+            actions: [
+              ProfileSettingsAction(
+                icon: Icons.edit_outlined,
+                tooltip: t('edit'),
+                onPressed: () => _editDisplayName(context, ref, name),
+              ),
+            ],
           );
         }
         return defaultTile;
       },
       sectionContentBuilder: (sectionKey, children) {
+        if (sectionKey == 'account') {
+          return [
+            ...children,
+            ExampleProfileDashboard(translate: t),
+          ];
+        }
         if (sectionKey != 'data') return children;
         return [
           ...children,
@@ -153,19 +263,8 @@ class _ExampleSettingsPageState extends ConsumerState<ExampleSettingsPage> {
           ),
         ];
       },
-      actions: [
-        IconButton(
-          key: const ValueKey('layout_toggle'),
-          tooltip: isMobile ? t('layout_desktop') : t('layout_mobile'),
-          icon: Icon(isMobile ? Icons.desktop_windows_outlined : Icons.smartphone),
-          onPressed: () {
-            setState(() {
-              _layout = isMobile
-                  ? ExamplePreviewLayout.desktop
-                  : ExamplePreviewLayout.mobile;
-            });
-          },
-        ),
+      actions: const [
+        SizedBox(width: 148),
       ],
     );
 
@@ -247,6 +346,7 @@ class _PhoneFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
+      key: const ValueKey('catalog_phone_frame'),
       width: size.width,
       height: size.height,
       decoration: BoxDecoration(
@@ -264,9 +364,56 @@ class _PhoneFrame extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: MediaQuery(
-          data: MediaQuery.of(context).copyWith(size: size),
-          child: child,
+        child: Column(
+          children: [
+            ColoredBox(
+              color: scheme.surface,
+              child: SizedBox(
+                height: 28,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: ExcludeSemantics(
+                    child: Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Row(
+                        children: [
+                          Text(
+                            '9:41',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            Icons.signal_cellular_alt,
+                            size: 14,
+                            color: scheme.onSurface,
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(Icons.wifi, size: 14, color: scheme.onSurface),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.battery_full,
+                            size: 14,
+                            color: scheme.onSurface,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  size: Size(size.width, size.height - 28),
+                  padding: EdgeInsets.zero,
+                  viewPadding: EdgeInsets.zero,
+                ),
+                child: ColoredBox(color: scheme.surface, child: child),
+              ),
+            ),
+          ],
         ),
       ),
     );

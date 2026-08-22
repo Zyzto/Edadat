@@ -12,17 +12,17 @@ Edadat (`flutter_settings_framework`) uses **[SemVer](https://semver.org/)**:
 
 ## Tag format
 
-Git tags are `vMAJOR.MINOR.PATCH` (example: `v0.6.0`).
+Git tags are `vMAJOR.MINOR.PATCH` (example: `v0.7.0`).
 
 The tag **must** match `version:` in [`pubspec.yaml`](pubspec.yaml) (build metadata `+N` is ignored for tagging).
 
-## Consumer apps (e.g. Hisab)
+## Consumer apps
 
 Prefer **pub.dev**:
 
 ```yaml
 dependencies:
-  flutter_settings_framework: ^0.6.0
+  flutter_settings_framework: ^0.7.0
 ```
 
 Or pin a **git tag** (not `main` or a raw commit):
@@ -32,7 +32,7 @@ dependencies:
   flutter_settings_framework:
     git:
       url: https://github.com/Zyzto/edadat.git
-      ref: v0.6.0
+      ref: v0.7.0
 ```
 
 ## Release checklist
@@ -47,7 +47,7 @@ dependencies:
 ```
 
 This runs analyze + tests, creates an annotated tag `vX.Y.Z`, and pushes it.  
-The **Release** GitHub Action then re-verifies the tag, runs tests, creates a GitHub Release, and publishes to **pub.dev** (OIDC; requires Automated publishing enabled for this repo).
+The **Release** GitHub Action then re-verifies the tag, runs tests, creates a GitHub Release, publishes to **pub.dev** (OIDC; requires Automated publishing enabled for this repo), and deploys the example catalog to **GitHub Pages**. A push to `main` also deploys Pages after CI tests pass.
 
 Dry-run:
 
@@ -59,5 +59,5 @@ Dry-run:
 
 | Workflow | Trigger | What it does |
 |----------|---------|----------------|
-| [CI](.github/workflows/ci.yml) | push/PR to `main` | version check, `dart analyze`, `flutter test`, example analyze |
-| [Release](.github/workflows/release.yml) | tag `v*.*.*` | tag↔pubspec check, CHANGELOG check, tests, GitHub Release, pub.dev publish |
+| [CI](.github/workflows/ci.yml) | push/PR to `main`, workflow_dispatch | version check, analyze, package + example tests; on `main` after tests: build `example/` web and deploy [GitHub Pages](https://zyzto.github.io/Edadat/) |
+| [Release](.github/workflows/release.yml) | tag `v*.*.*` | tag↔pubspec check, CHANGELOG check, tests, GitHub Release, pub.dev publish, GitHub Pages |

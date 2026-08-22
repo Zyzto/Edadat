@@ -41,6 +41,24 @@ export 'src/ui/settings_section.dart';
 export 'src/ui/setting_scroll_target.dart';
 export 'src/ui/snackbar_helper.dart';
 export 'src/ui/registry_settings_page.dart';
+export 'src/ui/l10n.dart';
+export 'src/ui/profile/profile_settings_card.dart';
+export 'src/ui/profile/profile_hero_metric.dart';
+export 'src/ui/profile/profile_kpi_strip.dart';
+export 'src/ui/profile/profile_budget_card.dart';
+export 'src/ui/profile/profile_notification_tile.dart';
+export 'src/ui/profile/profile_section_header.dart';
+export 'src/ui/profile/profile_status_banner.dart';
+export 'src/ui/profile/profile_placeholder.dart';
+export 'src/ui/profile/profile_session_tile.dart';
+export 'src/ui/profile/profile_linked_account_tile.dart';
+export 'src/ui/profile/profile_action_tile.dart';
+export 'src/ui/profile/profile_plan_card.dart';
+export 'src/ui/profile/profile_chip_row.dart';
+export 'src/ui/profile/profile_timeline_tile.dart';
+export 'src/ui/profile/profile_copy_row.dart';
+export 'src/ui/profile/profile_stat_grid.dart';
+export 'src/ui/profile/profile_security_tile.dart';
 
 // Localization
 export 'src/localization/easy_localization_adapter.dart';

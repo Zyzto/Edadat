@@ -8,6 +8,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'l10n.dart';
+
 /// Screen size breakpoints.
 enum ScreenSize {
   /// Phone: width < 600px
@@ -170,14 +172,20 @@ class SettingsDialog {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: Text(cancelText ?? 'Cancel'),
+          child: Text(
+            cancelText ?? MaterialLocalizations.of(context).cancelButtonLabel,
+          ),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(true),
           style: isDangerous
-              ? TextButton.styleFrom(foregroundColor: Colors.red)
+              ? TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                )
               : null,
-          child: Text(confirmText ?? 'Confirm'),
+          child: Text(
+            confirmText ?? MaterialLocalizations.of(context).okButtonLabel,
+          ),
         ),
       ],
     );
@@ -202,7 +210,10 @@ class SettingsDialog {
       return InkWell(
         onTap: () => Navigator.of(context).pop(option),
         borderRadius: BorderRadius.circular(8),
-        child: Padding(
+        child: Semantics(
+          button: true,
+          selected: isSelected,
+          child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
@@ -220,6 +231,7 @@ class SettingsDialog {
               Expanded(child: itemBuilder(option)),
             ],
           ),
+        ),
         ),
       );
     }).toList();
@@ -239,7 +251,7 @@ class SettingsDialog {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
           ),
         ],
       ),
@@ -310,11 +322,11 @@ class SettingsDialog {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
+                child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
               ),
               FilledButton(
                 onPressed: () => Navigator.of(context).pop(currentValue),
-                child: const Text('OK'),
+                child: Text(MaterialLocalizations.of(context).okButtonLabel),
               ),
             ],
           );
@@ -536,13 +548,15 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
                           color: theme.colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
-                          _getColorHex(_selectedColor),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontFamily: 'monospace',
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.5,
+                        child: SettingsLtr(
+                          child: Text(
+                            _getColorHex(_selectedColor),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontFamily: 'monospace',
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
                       ),
@@ -589,7 +603,9 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
                       ),
                     ),
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel'),
+                    child: Text(
+                      MaterialLocalizations.of(context).cancelButtonLabel,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -602,7 +618,7 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
                       ),
                     ),
                     onPressed: () => Navigator.of(context).pop(_selectedColor),
-                    child: const Text('Select'),
+                    child: Text(MaterialLocalizations.of(context).okButtonLabel),
                   ),
                 ),
               ],
@@ -665,42 +681,54 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
                     });
                   },
                   borderRadius: BorderRadius.circular(16),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 10,
-                      horizontal: 8,
-                    ),
-                    child: Row(
-                      children: [
-                        _ColorSwatch(
-                          color: mainColor,
-                          isSelected: isMainSelected,
-                          onTap: () => _selectColor(mainColor),
-                          size: 48,
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Text(
-                            _getColorName(materialColor),
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: isMainSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.w500,
-                              letterSpacing: -0.2,
+                  child: Semantics(
+                    button: true,
+                    expanded: isExpanded,
+                    label: settingsMaterialColorName(context, materialColor),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 8,
+                      ),
+                      child: Row(
+                        children: [
+                          _ColorSwatch(
+                            color: mainColor,
+                            isSelected: isMainSelected,
+                            onTap: () => _selectColor(mainColor),
+                            size: 48,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: ExcludeSemantics(
+                              child: Text(
+                                settingsMaterialColorName(
+                                  context,
+                                  materialColor,
+                                ),
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontWeight: isMainSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                        AnimatedRotation(
-                          turns: isExpanded ? 0.5 : 0,
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeInOutCubic,
-                          child: Icon(
-                            Icons.expand_more,
-                            color: theme.colorScheme.onSurfaceVariant,
-                            size: 24,
+                          ExcludeSemantics(
+                            child: AnimatedRotation(
+                              turns: isExpanded ? 0.5 : 0,
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeInOutCubic,
+                              child: Icon(
+                                Icons.expand_more,
+                                color: theme.colorScheme.onSurfaceVariant,
+                                size: 24,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -720,8 +748,8 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
                                 final index = entry.key;
                                 final shade = entry.value;
                                 return Padding(
-                                  padding: EdgeInsets.only(
-                                    right:
+                                  padding: EdgeInsetsDirectional.only(
+                                    end:
                                         index <
                                             _ColorPalette.getShades(
                                                   materialColor,
@@ -766,30 +794,6 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
     return '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
   }
 
-  String _getColorName(MaterialColor color) {
-    final names = {
-      Colors.red: 'Red',
-      Colors.pink: 'Pink',
-      Colors.purple: 'Purple',
-      Colors.deepPurple: 'Deep Purple',
-      Colors.indigo: 'Indigo',
-      Colors.blue: 'Blue',
-      Colors.lightBlue: 'Light Blue',
-      Colors.cyan: 'Cyan',
-      Colors.teal: 'Teal',
-      Colors.green: 'Green',
-      Colors.lightGreen: 'Light Green',
-      Colors.lime: 'Lime',
-      Colors.yellow: 'Yellow',
-      Colors.amber: 'Amber',
-      Colors.orange: 'Orange',
-      Colors.deepOrange: 'Deep Orange',
-      Colors.brown: 'Brown',
-      Colors.grey: 'Grey',
-      Colors.blueGrey: 'Blue Grey',
-    };
-    return names[color] ?? 'Color';
-  }
 }
 
 /// Color picker dialog for tablets/desktops.
@@ -858,13 +862,15 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                     color: theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text(
-                    _getColorHex(_selectedColor),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontFamily: 'monospace',
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.5,
+                  child: SettingsLtr(
+                    child: Text(
+                      _getColorHex(_selectedColor),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ),
@@ -894,7 +900,7 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
             ),
           ),
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
         ),
         FilledButton(
           style: FilledButton.styleFrom(
@@ -904,7 +910,7 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
             ),
           ),
           onPressed: () => Navigator.of(context).pop(_selectedColor),
-          child: const Text('Select'),
+          child: Text(MaterialLocalizations.of(context).okButtonLabel),
         ),
       ],
     );
@@ -980,7 +986,13 @@ class _ColorSwatch extends StatelessWidget {
     final theme = Theme.of(context);
     final contrastColor = SettingsDialog.getContrastColor(color);
 
-    return GestureDetector(
+    final hex =
+        '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: hex,
+      child: GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -1024,6 +1036,7 @@ class _ColorSwatch extends StatelessWidget {
                 )
               : null,
         ),
+      ),
       ),
     );
   }
@@ -1106,6 +1119,9 @@ class SplitScreenLayout extends StatelessWidget {
   /// Empty state widget for detail pane.
   final Widget? emptyState;
 
+  /// Localized empty-pane copy when [emptyState] is null.
+  final String? emptyDetailMessage;
+
   const SplitScreenLayout({
     super.key,
     required this.listPane,
@@ -1115,11 +1131,14 @@ class SplitScreenLayout extends StatelessWidget {
     this.listFlex = 4,
     this.detailFlex = 6,
     this.emptyState,
+    this.emptyDetailMessage,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final dir = Directionality.of(context);
+    final endBorder = BorderSide(color: theme.dividerColor);
 
     return Row(
       children: [
@@ -1129,7 +1148,10 @@ class SplitScreenLayout extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               color: theme.scaffoldBackgroundColor,
-              border: Border(right: BorderSide(color: theme.dividerColor)),
+              border: Border(
+                left: dir == TextDirection.rtl ? endBorder : BorderSide.none,
+                right: dir == TextDirection.ltr ? endBorder : BorderSide.none,
+              ),
             ),
             child: listPane,
           ),
@@ -1171,6 +1193,8 @@ class SplitScreenLayout extends StatelessWidget {
                 if (onCloseDetail != null)
                   IconButton(
                     icon: const Icon(Icons.close),
+                    tooltip:
+                        MaterialLocalizations.of(context).closeButtonTooltip,
                     onPressed: onCloseDetail,
                   ),
               ],
@@ -1184,23 +1208,32 @@ class SplitScreenLayout extends StatelessWidget {
   Widget _buildEmptyState(BuildContext context, ThemeData theme) {
     if (emptyState != null) return emptyState!;
 
+    final message = emptyDetailMessage ?? 'Select a setting to view details';
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.settings_outlined,
-            size: 64,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Select a setting to view details',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+      child: Semantics(
+        container: true,
+        label: message,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ExcludeSemantics(
+              child: Icon(
+                Icons.settings_outlined,
+                size: 64,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            ExcludeSemantics(
+              child: Text(
+                message,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -15,6 +15,7 @@ import '../core/search_index.dart';
 import '../core/setting_definition.dart';
 import '../core/settings_registry.dart';
 import 'responsive_helpers.dart';
+import 'l10n.dart';
 import 'setting_scroll_target.dart';
 import 'settings_section.dart';
 import 'settings_tile.dart';
@@ -79,6 +80,9 @@ class RegistrySettingsPage extends ConsumerStatefulWidget {
   /// Extra [AppBar] actions (e.g. a layout toggle in the example).
   final List<Widget>? actions;
 
+  /// Localized empty-pane copy for split layout.
+  final String? emptyDetailMessage;
+
   /// When null, uses a split list/detail pane if width > height.
   /// Set to `true`/`false` to force desktop or stacked (mobile) layout.
   final bool? splitLayout;
@@ -99,6 +103,7 @@ class RegistrySettingsPage extends ConsumerStatefulWidget {
     this.searchResultFilter,
     this.emptySearchMessageBuilder,
     this.actions,
+    this.emptyDetailMessage,
     this.splitLayout,
   });
 
@@ -244,14 +249,19 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
       listPane = EmptySearchResults(
         query: _searchQuery,
         message: widget.emptySearchMessageBuilder?.call(_searchQuery) ??
-            'No settings found for "$_searchQuery"',
+            settingsEmptySearchFallback(
+              _searchQuery,
+              Directionality.of(context),
+            ),
       );
     } else if (hasSearch) {
       listPane = ListView(
+        key: const ValueKey('settings_list'),
         children: _searchResultWidgets(settings, registry, filteredSearch),
       );
     } else {
       listPane = ListView(
+        key: const ValueKey('settings_list'),
         controller: _scrollController,
         children: _buildSections(settings, registry, isSplit),
       );
@@ -273,6 +283,7 @@ class _RegistrySettingsPageState extends ConsumerState<RegistrySettingsPage> {
             listPane: listPane,
             detailPane: _buildDetailPane(settings, selectedSectionId),
             detailTitle: _detailTitleFor(selectedSectionId),
+            emptyDetailMessage: widget.emptyDetailMessage,
             onCloseDetail: () => setState(() {
               _selectedSectionId = null;
             }),

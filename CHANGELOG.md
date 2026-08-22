@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.0] - 2026-08-22
+
+### Added
+- **Profile chrome**: reusable slot-based widgets for account surfaces
+  (`ProfileSettingsCard`, hero metric, KPI strip, budget card, notifications,
+  section header, status banner, placeholder, session / linked-account /
+  action / security tiles, plan card, chips, timeline, copy row, stat grid).
+- **`SettingsLtr` / `settingsBreadcrumb` / `settingsChevronEnd`**: shared RTL
+  helpers for settings chrome.
+- Example **Account** dashboard with interactive dummy data and a **See all
+  sessions** sheet (this device vs other devices, per-device and bulk sign-out).
+- Example language/theme overlay chrome with circular theme reveal.
+- **GitHub Pages** is now a CI job after tests on `main` (and again on release
+  tags), so [zyzto.github.io/Edadat](https://zyzto.github.io/Edadat/) tracks
+  the published catalog.
+
+### Changed
+- Search indexing and jump-to highlighting are stricter with multi-word and
+  locale-aware terms.
+- Settings tiles, sections, and responsive helpers share the new l10n chrome.
+- Screenshots refreshed for the hosted catalog.
+
 ## [0.6.0] - 2026-08-07
 
 Packaging milestone (relicense + branding + first pub.dev publish path). No

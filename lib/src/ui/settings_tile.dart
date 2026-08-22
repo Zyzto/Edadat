@@ -8,6 +8,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/setting_definition.dart';
+import 'l10n.dart';
 import 'responsive_helpers.dart';
 
 /// Animated wrapper for setting values that provides visual feedback on changes.
@@ -63,7 +64,8 @@ class _AnimatedSettingValueState extends State<AnimatedSettingValue>
     if (widget.value != _previousValue) {
       _previousValue = widget.value;
       _controller.forward(from: 0);
-      if (widget.hapticFeedback) {
+      if (widget.hapticFeedback &&
+          !MediaQuery.disableAnimationsOf(context)) {
         HapticFeedback.selectionClick();
       }
     }
@@ -77,6 +79,9 @@ class _AnimatedSettingValueState extends State<AnimatedSettingValue>
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return widget.child;
+    }
     return AnimatedBuilder(
       animation: _scaleAnimation,
       builder: (context, child) {
@@ -111,8 +116,9 @@ class AnimatedSettingText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reduce = MediaQuery.disableAnimationsOf(context);
     return AnimatedSwitcher(
-      duration: duration,
+      duration: reduce ? Duration.zero : duration,
       transitionBuilder: (child, animation) {
         return FadeTransition(
           opacity: animation,
@@ -125,11 +131,13 @@ class AnimatedSettingText extends StatelessWidget {
           ),
         );
       },
-      child: Text(
-        value,
-        key: ValueKey(value),
-        style: style,
-        textAlign: textAlign,
+      child: SettingsLtr(
+        child: Text(
+          value,
+          key: ValueKey(value),
+          style: style,
+          textAlign: textAlign,
+        ),
       ),
     );
   }
@@ -350,7 +358,7 @@ class SelectSettingsTile<T> extends StatelessWidget {
       leading: leading,
       title: title,
       subtitle: subtitle,
-      trailing: const Icon(Icons.chevron_right),
+      trailing: settingsChevronEnd(context),
       onTap: enabled ? () => _showDialog(context) : null,
       enabled: enabled,
     );
@@ -359,7 +367,8 @@ class SelectSettingsTile<T> extends StatelessWidget {
   Future<void> _showDialog(BuildContext context) async {
     final result = await SettingsDialog.select<T>(
       context: context,
-      title: dialogTitle ?? 'Select',
+      title: dialogTitle ??
+          (title is Text ? (title as Text).data ?? '' : ''),
       options: options,
       itemBuilder: itemBuilder,
       selectedValue: value,
@@ -645,7 +654,7 @@ class EnumSettingsTile extends StatelessWidget {
       leading: leading,
       title: title,
       subtitle: subtitle ?? Text(labelBuilder(value)),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: settingsChevronEnd(context),
       onTap: enabled ? () => _showDialog(context) : null,
       enabled: enabled,
     );
@@ -654,7 +663,8 @@ class EnumSettingsTile extends StatelessWidget {
   Future<void> _showDialog(BuildContext context) async {
     final result = await SettingsDialog.select<String>(
       context: context,
-      title: dialogTitle ?? 'Select',
+      title: dialogTitle ??
+          (title is Text ? (title as Text).data ?? '' : ''),
       options: options,
       itemBuilder: (opt) => Text(labelBuilder(opt)),
       selectedValue: value,
@@ -815,7 +825,7 @@ class SliderSettingsTile extends StatelessWidget {
       leading: leading,
       title: title,
       subtitle: Text(_formatValue(value)),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: settingsChevronEnd(context),
       onTap: enabled ? () => _showDialog(context) : null,
       enabled: enabled,
     );
@@ -824,7 +834,8 @@ class SliderSettingsTile extends StatelessWidget {
   Future<void> _showDialog(BuildContext context) async {
     final result = await SettingsDialog.slider(
       context: context,
-      title: dialogTitle ?? 'Select value',
+      title: dialogTitle ??
+          (title is Text ? (title as Text).data ?? '' : ''),
       value: value,
       min: min,
       max: max,
@@ -918,7 +929,7 @@ class ColorSettingsTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+          settingsChevronEnd(context, color: theme.colorScheme.onSurfaceVariant),
         ],
       ),
       onTap: enabled ? () => _showDialog(context) : null,
@@ -929,7 +940,8 @@ class ColorSettingsTile extends StatelessWidget {
   Future<void> _showDialog(BuildContext context) async {
     final result = await SettingsDialog.colorPicker(
       context: context,
-      title: dialogTitle ?? 'Select color',
+      title: dialogTitle ??
+          (title is Text ? (title as Text).data ?? '' : ''),
       currentColor: value,
       colors: colors,
       allowCustom: allowCustom,
@@ -973,7 +985,7 @@ class NavigationSettingsTile extends StatelessWidget {
       leading: leading,
       title: title,
       subtitle: subtitle,
-      trailing: const Icon(Icons.chevron_right),
+      trailing: settingsChevronEnd(context),
       onTap: enabled ? onTap : null,
       enabled: enabled,
     );
@@ -1013,7 +1025,7 @@ class ActionSettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = isDangerous ? Colors.red : null;
+    final color = isDangerous ? theme.colorScheme.error : null;
 
     return ListTile(
       leading: leading != null
@@ -1050,6 +1062,10 @@ class InfoSettingsTile extends StatelessWidget {
   /// Value to copy (if different from displayed).
   final String? copyValue;
 
+  /// Snackbar copy after a successful copy. Hosts should pass a localized
+  /// string; defaults to [MaterialLocalizations.copyButtonLabel].
+  final String? copiedMessage;
+
   const InfoSettingsTile({
     super.key,
     this.leading,
@@ -1057,23 +1073,35 @@ class InfoSettingsTile extends StatelessWidget {
     required this.value,
     this.copyable = false,
     this.copyValue,
+    this.copiedMessage,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
+    final tile = ListTile(
       leading: leading,
       title: title,
       trailing: value,
       onTap: copyable
-          ? () {
-              // Copy to clipboard
-              // Clipboard.setData(ClipboardData(text: copyValue ?? value.toString()));
+          ? () async {
+              final text = copyValue ??
+                  (value is Text ? (value as Text).data : null);
+              if (text == null || text.isEmpty) return;
+              await Clipboard.setData(ClipboardData(text: text));
+              if (!context.mounted) return;
+              final message = copiedMessage ??
+                  MaterialLocalizations.of(context).copyButtonLabel;
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Copied to clipboard')),
+                SnackBar(content: Text(message)),
               );
             }
           : null,
+    );
+    if (!copyable) return tile;
+    return Semantics(
+      button: true,
+      hint: MaterialLocalizations.of(context).copyButtonLabel,
+      child: tile,
     );
   }
 }
@@ -1128,37 +1156,45 @@ class InlineIntStepper extends StatelessWidget {
     final canDecrement = enabled && value > min;
     final canIncrement = enabled && value < max;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _StepperButton(
-          icon: Icons.remove,
-          enabled: canDecrement,
-          onPressed: _decrement,
-        ),
-        AnimatedSettingValue(
-          value: value,
-          child: Container(
-            constraints: const BoxConstraints(minWidth: 40),
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: AnimatedSettingText(
-              value: value.toString(),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: enabled
-                    ? theme.colorScheme.onSurface
-                    : theme.colorScheme.onSurface.withValues(alpha: 0.38),
+    return Semantics(
+      container: true,
+      value: '$value',
+      increasedValue: canIncrement ? '${value + step}' : null,
+      decreasedValue: canDecrement ? '${value - step}' : null,
+      onIncrease: canIncrement ? _increment : null,
+      onDecrease: canDecrement ? _decrement : null,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _StepperButton(
+            icon: Icons.remove,
+            enabled: canDecrement,
+            onPressed: _decrement,
+          ),
+          AnimatedSettingValue(
+            value: value,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 40),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: AnimatedSettingText(
+                value: value.toString(),
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: enabled
+                      ? theme.colorScheme.onSurface
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.38),
+                ),
               ),
             ),
           ),
-        ),
-        _StepperButton(
-          icon: Icons.add,
-          enabled: canIncrement,
-          onPressed: _increment,
-        ),
-      ],
+          _StepperButton(
+            icon: Icons.add,
+            enabled: canIncrement,
+            onPressed: _increment,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1185,16 +1221,20 @@ class _StepperButton extends StatelessWidget {
         ? theme.colorScheme.onPrimaryContainer
         : theme.colorScheme.onSurface.withValues(alpha: 0.38);
 
-    return Material(
-      color: bgColor,
-      borderRadius: BorderRadius.circular(8),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: enabled ? onPressed : null,
-        child: SizedBox(
-          width: 36,
-          height: 36,
-          child: Center(child: Icon(icon, size: 20, color: iconColor)),
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      child: Material(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: enabled ? onPressed : null,
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Center(child: Icon(icon, size: 20, color: iconColor)),
+          ),
         ),
       ),
     );
@@ -1307,7 +1347,7 @@ class IntSettingsTile extends StatelessWidget {
       leading: leading,
       title: title,
       subtitle: subtitle ?? Text(value.toString()),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: settingsChevronEnd(context),
       onTap: enabled ? () => _showDialog(context) : null,
       enabled: enabled,
     );
@@ -1316,7 +1356,8 @@ class IntSettingsTile extends StatelessWidget {
   Future<void> _showDialog(BuildContext context) async {
     final result = await SettingsDialog.slider(
       context: context,
-      title: dialogTitle ?? 'Select value',
+      title: dialogTitle ??
+          (title is Text ? (title as Text).data ?? '' : ''),
       value: value.toDouble(),
       min: min.toDouble(),
       max: max.toDouble(),

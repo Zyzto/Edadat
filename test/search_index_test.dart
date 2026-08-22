@@ -197,6 +197,27 @@ void main() {
     expect(keys, isNot(contains('display_name')));
   });
 
+  test('Arabic search ignores tatweel, harakat, and alef variants', () async {
+    final index = SearchIndex(
+      registry: registry,
+      localizationProvider: localization,
+    );
+    await index.build();
+
+    // السمة with tatweel after س
+    expect(
+      index.search('الســمة').map((r) => r.setting.key),
+      contains('theme_mode'),
+    );
+    // ألمظهر (alef with hamza) vs المظهر
+    expect(
+      index.search('ألمظهر').map((r) => r.setting.key),
+      contains('theme_mode'),
+    );
+    expect(normalizeSearchText('الســمة'), normalizeSearchText('السمة'));
+    expect(normalizeSearchText('ألمظهر'), normalizeSearchText('المظهر'));
+  });
+
   test('Latin typos of 4+ letters still match', () async {
     final index = SearchIndex(
       registry: registry,

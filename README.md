@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD033 MD060 -->
+
 <p align="center">
   <img src="assets/edadat-logo.svg" alt="Edadat" width="220" />
 </p>
@@ -11,20 +13,32 @@
 </p>
 
 <p align="center">
-  <a href="https://pub.dev/packages/flutter_settings_framework"><img alt="pub.dev" src="https://img.shields.io/pub/v/flutter_settings_framework.svg?style=flat-square&label=pub.dev&color=8B6914" /></a>
-  <a href="https://github.com/Zyzto/Edadat"><img alt="repo" src="https://img.shields.io/badge/github-Zyzto%2FEdadat-C0C0C0?style=flat-square" /></a>
-  <img alt="flutter" src="https://img.shields.io/badge/Flutter-%3E%3D3.0-C0C0C0?style=flat-square&logo=flutter&logoColor=white" />
-  <img alt="license" src="https://img.shields.io/badge/license-MPL--2.0-8B6914?style=flat-square" />
+  <a href="https://zyzto.github.io/Edadat/"><img alt="Live demo" src="https://img.shields.io/badge/live%20demo-zyzto.github.io%2FEdadat-8B6914?style=for-the-badge" /></a>
 </p>
 
 <p align="center">
+  <a href="https://pub.dev/packages/flutter_settings_framework"><img alt="pub.dev" src="https://img.shields.io/pub/v/flutter_settings_framework.svg?style=flat-square&label=pub.dev&color=8B6914" /></a>
+  <a href="https://github.com/Zyzto/Edadat"><img alt="repo" src="https://img.shields.io/badge/github-Zyzto%2FEdadat-C0C0C0?style=flat-square" /></a>
+  <img alt="flutter" src="https://img.shields.io/badge/Flutter-%3E%3D3.0-C0C0C0?style=flat-square&logo=flutter&logoColor=white" />
+  <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/license-MPL--2.0-8B6914?style=flat-square" /></a>
+</p>
+
+<p align="center">
+  <strong><a href="https://zyzto.github.io/Edadat/">Live demo</a></strong>
+  — open the example catalog in the browser<br/>
+  <a href="https://zyzto.github.io/Edadat/">zyzto.github.io/Edadat</a>
+</p>
+
+<p align="center">
+  <a href="https://zyzto.github.io/Edadat/">Live demo</a> ·
   <a href="#install">Install</a> ·
   <a href="#quick-start">Quick start</a> ·
   <a href="#screenshots">Screenshots</a> ·
   <a href="#features-at-a-glance">Features</a> ·
   <a href="#setting-types">Types</a> ·
   <a href="#example">Example</a> ·
-  <a href="https://zyzto.github.io/Edadat/">Live demo</a> ·
+  <a href="CHANGELOG.md">Changelog</a> ·
+  <a href="VERSIONING.md">Versioning</a> ·
   <a href="README.ar.md">العربية</a> ·
   <a href="docs/i18n-ar.md">Arabic UI style</a>
 </p>
@@ -55,22 +69,26 @@ On pub.dev: [`flutter_settings_framework`](https://pub.dev/packages/flutter_sett
 ## Screenshots
 
 <p align="center">
-  <img src="screenshots/settings-en.png" alt="Settings catalog (English)" width="180" />
-  <img src="screenshots/settings-ar.png" alt="Settings catalog (Arabic)" width="180" />
-  <img src="screenshots/search-en.png" alt="Search for theme" width="180" />
+  <a href="https://zyzto.github.io/Edadat/">
+    <img src="screenshots/settings-en.png" alt="Settings catalog (English) — live demo" width="180" />
+    <img src="screenshots/settings-ar.png" alt="Settings catalog (Arabic) — live demo" width="180" />
+    <img src="screenshots/search-en.png" alt="Search for theme — live demo" width="180" />
+  </a>
 </p>
 
 <p align="center">
-  <sub>English catalog · Arabic RTL · Bilingual search</sub>
+  <sub>English catalog · Arabic RTL · Bilingual search — <a href="https://zyzto.github.io/Edadat/">try them in the live demo</a></sub>
 </p>
 
 <details>
 <summary>Dark theme</summary>
 
 <p align="center">
-  <img src="screenshots/settings-en-dark.png" alt="Settings catalog, dark (English)" width="140" />
-  <img src="screenshots/settings-ar-dark.png" alt="Settings catalog, dark (Arabic)" width="140" />
-  <img src="screenshots/search-ar.png" alt="Search for مظهر" width="140" />
+  <a href="https://zyzto.github.io/Edadat/">
+    <img src="screenshots/settings-en-dark.png" alt="Settings catalog, dark (English) — live demo" width="140" />
+    <img src="screenshots/settings-ar-dark.png" alt="Settings catalog, dark (Arabic) — live demo" width="140" />
+    <img src="screenshots/search-ar.png" alt="Search for مظهر — live demo" width="140" />
+  </a>
 </p>
 
 <p align="center">
@@ -103,7 +121,7 @@ Rendered from the [`example/`](example/) catalog (`flutter test test/screenshots
 
 ```yaml
 dependencies:
-  flutter_settings_framework: ^0.6.0
+  flutter_settings_framework: ^0.7.0
 ```
 
 Or:
@@ -119,14 +137,14 @@ dependencies:
   flutter_settings_framework:
     git:
       url: https://github.com/Zyzto/edadat.git
-      ref: v0.6.0
+      ref: v0.7.0
 ```
 
 ```dart
 import 'package:flutter_settings_framework/flutter_settings_framework.dart';
 ```
 
-Current version: **0.6.0**.
+Current version: **0.7.0**.
 
 ---
 
@@ -323,17 +341,28 @@ Set `visible: false` on internal settings so they never appear in search (`order
 
 ## Example
 
-See [`example/`](example/) for a bilingual `RegistrySettingsPage` catalog: Bool, Enum, Color, Double, Int, String, StringList, Action, `dependsOn`, and EN/AR search.
+**[Live demo — zyzto.github.io/Edadat](https://zyzto.github.io/Edadat/)**
 
-Live web build: [zyzto.github.io/Edadat](https://zyzto.github.io/Edadat/)
+The hosted catalog is the `example/` web build. CI deploys it after tests pass
+on `main`.
+
+See [`example/`](example/) for a bilingual `RegistrySettingsPage` catalog: Bool, Enum, Color, Double, Int, String, StringList, Action, `dependsOn`, and EN/AR search. Language and theme toggles sit above the catalog (same chrome as [Safaeh](https://github.com/Zyzto/Safaeh)).
 
 The example is package-style (web only in-tree); analyze with:
 
 ```bash
-cd example && flutter pub get && dart analyze --fatal-infos
+cd example && flutter pub get && dart analyze --fatal-infos && flutter test
 ```
 
+`example/test/screenshots_test.dart` writes catalog PNGs to [`screenshots/`](screenshots/).
+
 To run on a device, generate the other platforms (`flutter create . --platforms=android,ios` inside `example/`). Details: [example/README.md](example/README.md).
+
+Package tests:
+
+```bash
+dart analyze --fatal-infos && flutter test
+```
 
 ---
 
