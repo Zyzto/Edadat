@@ -201,10 +201,10 @@ class _ExampleSettingsPageState extends ConsumerState<ExampleSettingsPage> {
             title: Text(t(setting.titleKey)),
             value: const Directionality(
               textDirection: TextDirection.ltr,
-              child: Text('0.7.0'),
+              child: Text('0.7.1'),
             ),
             copyable: true,
-            copyValue: '0.7.0',
+            copyValue: '0.7.1',
             copiedMessage: t('copied'),
           );
         }

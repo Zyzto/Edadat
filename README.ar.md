@@ -43,7 +43,7 @@
   <a href="VERSIONING.md">Versioning</a>
   <br/>
   <a href="README.md"><span dir="ltr">English</span></a> ·
-  <a href="docs/i18n-ar.md">دليل أسلوب العربية</a>
+  <a href="doc/i18n-ar.md">دليل أسلوب العربية</a>
 </p>
 
 <p align="center">
@@ -146,7 +146,7 @@
 
 ```yaml
 dependencies:
-  flutter_settings_framework: ^0.7.0
+  flutter_settings_framework: ^0.7.1
 ```
 
 <div dir="rtl" lang="ar">
@@ -170,7 +170,7 @@ dependencies:
   flutter_settings_framework:
     git:
       url: https://github.com/Zyzto/edadat.git
-      ref: v0.7.0
+      ref: v0.7.1
 ```
 
 ```dart
@@ -179,7 +179,7 @@ import 'package:flutter_settings_framework/flutter_settings_framework.dart';
 
 <div dir="rtl" lang="ar">
 
-الإصدار الحالي: **0.7.0**.
+الإصدار الحالي: **0.7.1**.
 
 </div>
 
@@ -345,7 +345,7 @@ RegistrySettingsPage(
 
 مرّر <span dir="ltr"><code>PreIndexedLocalizationProvider</code></span> عند <span dir="ltr"><code>initializeSettings</code></span> حتى تُفهرَس titles وsubtitles وsection titles لكل locale. أضف <span dir="ltr"><code>searchTerms</code></span> للمرادفات.
 
-لصياغة واجهة عربية (أسلوب فصحى، تجنّب الترجمة الحرفية، ومسرد مشترك)، انظر <a href="docs/i18n-ar.md">دليل أسلوب تعريب الواجهة</a>.
+لصياغة واجهة عربية (أسلوب فصحى، تجنّب الترجمة الحرفية، ومسرد مشترك)، انظر <a href="doc/i18n-ar.md">دليل أسلوب تعريب الواجهة</a>.
 
 </div>
 

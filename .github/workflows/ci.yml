@@ -39,6 +39,9 @@ jobs:
       - name: Analyze
         run: dart analyze --fatal-infos
 
+      - name: Publish dry-run
+        run: flutter pub publish --dry-run
+
       - name: Test
         run: flutter test --coverage
 
@@ -76,7 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     concurrency:
       group: github-pages
-      cancel-in-progress: true
+      cancel-in-progress: false
     permissions:
       contents: read
       pages: write

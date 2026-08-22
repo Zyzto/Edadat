@@ -40,7 +40,7 @@
   <a href="CHANGELOG.md">Changelog</a> ·
   <a href="VERSIONING.md">Versioning</a> ·
   <a href="README.ar.md">العربية</a> ·
-  <a href="docs/i18n-ar.md">Arabic UI style</a>
+  <a href="doc/i18n-ar.md">Arabic UI style</a>
 </p>
 
 <p align="center">
@@ -121,7 +121,7 @@ Rendered from the [`example/`](example/) catalog (`flutter test test/screenshots
 
 ```yaml
 dependencies:
-  flutter_settings_framework: ^0.7.0
+  flutter_settings_framework: ^0.7.1
 ```
 
 Or:
@@ -137,14 +137,14 @@ dependencies:
   flutter_settings_framework:
     git:
       url: https://github.com/Zyzto/edadat.git
-      ref: v0.7.0
+      ref: v0.7.1
 ```
 
 ```dart
 import 'package:flutter_settings_framework/flutter_settings_framework.dart';
 ```
 
-Current version: **0.7.0**.
+Current version: **0.7.1**.
 
 ---
 
@@ -282,7 +282,7 @@ Search results: `ref.watch(settingsSearchResultsProvider(query))`.
 
 Pass `PreIndexedLocalizationProvider` at `initializeSettings` so titles, subtitles, and section titles are indexed for every locale. Add `searchTerms` for synonyms.
 
-For Arabic UI wording (MSA tone, anti-calque habits, and a shared glossary), see [Arabic UI localization style guide](docs/i18n-ar.md).
+For Arabic UI wording (MSA tone, anti-calque habits, and a shared glossary), see [Arabic UI localization style guide](doc/i18n-ar.md).
 
 ```dart
 const languageSetting = EnumSetting(

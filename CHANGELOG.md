@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.1] - 2026-08-22
+
+### Fixed
+- Rename the package `docs/` directory to `doc/` so `dart pub publish` passes
+  pub.dev layout validation.
+- Release GitHub Pages waits for an in-flight CI deploy instead of failing the
+  tag workflow.
+
 ## [0.7.0] - 2026-08-22
 
 ### Added
